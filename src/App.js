@@ -3,7 +3,9 @@ import {
   Container,
   Dropdown,
   Image,
-  Menu
+  Menu,
+  Table,
+  Label
 } from 'semantic-ui-react'
 import { useReadCypher } from 'use-neo4j'
 
@@ -37,11 +39,19 @@ console.log(first)
 
 }, []);
  
+setInterval(() => console.log("totot"), 10000)
 
+var result = <div></div>
 
-
-const query = `MATCH (m:Movie {title: $title}) RETURN m`
-const params = { title: 'The Matrix' }
+const query = `Match (c:CRITICTE)
+where c.level = 'Alerte'
+OPTIONAL MATCH  (c)-[r:HAS]->(s:SERVICE)<- [f:IN_FRONT_OF]-(e:EQUIPEMENT) 
+WITH count(f) as pls, collect(s.service) as services, e
+OPTIONAL MATCH (e)-[f2:IN_FRONT_OF]->(s2:SERVICE)<- [r2:HAS] -(c2:CRITICTE)
+WHERE c2 <> 'Alerte'
+WITH pls, services, e , count(r2) as good
+return pls, e.device, e.component, services, good`
+const params = {  }
 
 const {
   loading,
@@ -64,10 +74,22 @@ console.log(first)
   console.log("query finished ")
   console.log("so first is ")
   //console.log(first)
-  if(first){
+  if(records){
     console.log("in first")
-    console.log(first.get("m").properties.title)
-    console.log(first)
+    //console.log(first.get("pls"))
+    result = records.map((element) => 
+
+      <Table.Row>
+      <Table.Cell>{element.get("e.component")}</Table.Cell>
+        <Table.Cell>Cell</Table.Cell>
+        <Table.Cell>Cell</Table.Cell>
+        <Table.Cell>Cell</Table.Cell>
+        <Table.Cell>Cell</Table.Cell>
+      </Table.Row>
+
+
+    );
+    console.log(records)
     console.log("finished first")
   }
   
@@ -107,10 +129,33 @@ return (
             <Dropdown.Item>List Item</Dropdown.Item>
           </Dropdown.Menu>
         </Dropdown>
+
+
+
+
       </Container>
+    
     </Menu>
+    <Container>
+ <Table celled>
+    <Table.Header>
+      <Table.Row>
+        <Table.HeaderCell>Header</Table.HeaderCell>
+        <Table.HeaderCell>Header</Table.HeaderCell>
+        <Table.HeaderCell>Header</Table.HeaderCell>
+        <Table.HeaderCell>Header</Table.HeaderCell>
+        <Table.HeaderCell>Header</Table.HeaderCell>
+      </Table.Row>
+    </Table.Header>
+
+    <Table.Body>
+{result}
+   
 
 
+    </Table.Body>
+    </Table>
+    </Container>
 
   </div>
 )
