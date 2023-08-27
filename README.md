@@ -68,3 +68,30 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+
+# local 
+
+## data
+
+```
+Match (c:CRITICTE)
+where c.level = 'Alerte'
+OPTIONAL MATCH(c)-[r:HAS]->(s:SERVICE)<- [f:IN_FRONT_OF]-(e:EQUIPEMENT)
+WITH count(f) as pls, collect(s.service) as services, e
+OPTIONAL MATCH (e)-[f2:IN_FRONT_OF]->(s2:SERVICE)<- [r2:HAS] -(c2:CRITICTE)
+WHERE c2 <> 'Alerte'
+WITH pls, services, e , count(r2) as good
+return pls, e.device, e.component, services, good
+
+
+create (n:CRITICTE { level:'Alerte'})
+create (n2:CRITICTE { level:'OK'})
+Create (s:SERVICE { service: 'GPS'})
+Create (s2:SERVICE { service: 'OLALA'})
+create (n)-[:HAS]->(s)
+create (e:EQUIPEMENT { component: 'slb', device:'DERREJNJND', type:'F5'})
+CREATE (e)-[:IN_FRONT_OF]->(s)
+CREATE (e)-[:IN_FRONT_OF]->(s2)
+CREATE (s2)-[:HAS]->(n2)
+``````
