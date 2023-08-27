@@ -72,6 +72,11 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/t
 
 # local 
 
+## database 
+export NEO4J_PATH=<SET_PATH_TO_STORE_DATA>
+docker run --publish=7474:7474 --publish=7687:7687 --volume=$NEO4J_PATH:/data neo4j:latest
+
+
 ## data
 
 ```
@@ -93,5 +98,5 @@ create (n)-[:HAS]->(s)
 create (e:EQUIPEMENT { component: 'slb', device:'DERREJNJND', type:'F5'})
 CREATE (e)-[:IN_FRONT_OF]->(s)
 CREATE (e)-[:IN_FRONT_OF]->(s2)
-CREATE (s2)-[:HAS]->(n2)
+CREATE (n)-[:HAS]->(s2)
 ``````

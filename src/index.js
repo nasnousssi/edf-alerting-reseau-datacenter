@@ -7,7 +7,7 @@ import 'semantic-ui-css/semantic.min.css'
 
 import { Neo4jProvider, createDriver } from 'use-neo4j'
 
-const driver = createDriver('neo4j', 'MacBook-Pro-de-anis-2.local', 7687, 'neo4j', 'azertyuiop')
+const driver = createDriver('neo4j', 'localhost', 7687, 'neo4j', 'azertyuiop')
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

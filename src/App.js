@@ -5,9 +5,17 @@ import {
   Image,
   Menu,
   Table,
-  Label
+  Segment,
+  Label,
+  Grid
 } from 'semantic-ui-react'
 import { useReadCypher } from 'use-neo4j'
+import { Graph } from "react-d3-graph";
+
+import config from "./config";
+
+
+import  Logo  from './edf.png';
 
 
 const App = () => {
@@ -77,14 +85,17 @@ console.log(first)
   if(records){
     console.log("in first")
     //console.log(first.get("pls"))
+    
+    records.forEach(element => element.get("services").forEach(item => console.log(item) ))
     result = records.map((element) => 
 
       <Table.Row>
-      <Table.Cell>{element.get("e.component")}</Table.Cell>
-        <Table.Cell>Cell</Table.Cell>
-        <Table.Cell>Cell</Table.Cell>
-        <Table.Cell>Cell</Table.Cell>
-        <Table.Cell>Cell</Table.Cell>
+      <Table.Cell>{element.get("e.device")}</Table.Cell>
+        <Table.Cell>{element.get("e.component")}</Table.Cell>
+        <Table.Cell>{element.get("services").map(item =>  (<Label key={item}>{item}</Label>))}</Table.Cell>
+        <Table.Cell>
+          {+element.get("pls")*100/(+element.get("pls") + +element.get("good"))}%</Table.Cell>
+        <Table.Cell>{+element.get("pls") + +element.get("good")}</Table.Cell>
       </Table.Row>
 
 
@@ -101,14 +112,33 @@ console.log(first)
  }
 
 
+ const data = {
+  nodes: [{ id: "Harry" }, { id: "Sally" }, { id: "Alice" }],
+  links: [
+    { source: "Harry", target: "Sally" },
+    { source: "Harry", target: "Alice" },
+  ],
+};
+
+const myConfig = {
+  nodeHighlightBehavior: true,
+  node: {
+    color: "lightgreen",
+    size: 120,
+    highlightStrokeColor: "blue",
+  },
+  link: {
+    highlightColor: "lightblue",
+  },
+};
 
 return (
   <div>
     <Menu fixed='top' inverted>
       <Container>
         <Menu.Item as='a' header>
-          <Image size='mini' src='/logo.png' style={{ marginRight: '1.5em' }} />
-          Project Name
+          <Image size='mini' src={Logo} style={{ marginRight: '1.5em' }} />
+          POC Neo4j 
         </Menu.Item>
         <Menu.Item as='a'>Home</Menu.Item>
 
@@ -136,15 +166,32 @@ return (
       </Container>
     
     </Menu>
-    <Container>
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+    <Grid>
+    <Grid.Row>
+      <Grid.Column width={8}>
+      <Segment basic padded='very'>
  <Table celled>
     <Table.Header>
       <Table.Row>
-        <Table.HeaderCell>Header</Table.HeaderCell>
-        <Table.HeaderCell>Header</Table.HeaderCell>
-        <Table.HeaderCell>Header</Table.HeaderCell>
-        <Table.HeaderCell>Header</Table.HeaderCell>
-        <Table.HeaderCell>Header</Table.HeaderCell>
+        <Table.HeaderCell>Composant reseau</Table.HeaderCell>
+        <Table.HeaderCell>type</Table.HeaderCell>
+        <Table.HeaderCell>Application en alerte</Table.HeaderCell>
+        <Table.HeaderCell>Etat du composant reseau </Table.HeaderCell>
+        <Table.HeaderCell>nombre d'application total</Table.HeaderCell>
       </Table.Row>
     </Table.Header>
 
@@ -155,7 +202,24 @@ return (
 
     </Table.Body>
     </Table>
-    </Container>
+    </Segment>
+      </Grid.Column>
+      <Grid.Column width={8}>
+      <Segment>
+    <div id="graph-container" className="graph-container">
+    <Graph id="graph" config={myConfig} data={data}  />
+    </div>
+    </Segment>
+      </Grid.Column>
+    </Grid.Row>
+
+
+  </Grid>
+
+
+
+
+
 
   </div>
 )
