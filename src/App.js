@@ -15,7 +15,6 @@ import { Graph } from "react-d3-graph";
 import config from "./config";
 
 
-import  Logo  from './edf.png';
 
 
 const App = () => {
@@ -140,7 +139,6 @@ return (
     <Menu fixed='top' inverted>
       <Container>
         <Menu.Item as='a' header>
-          <Image size='mini' src={Logo} style={{ marginRight: '1.5em' }} />
           POC Neo4j 
         </Menu.Item>
         
