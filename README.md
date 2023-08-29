@@ -73,7 +73,7 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/t
 # local 
 
 ## database 
-export NEO4J_PATH=<SET_PATH_TO_STORE_DATA>
+export NEO4J_PATH=/Users/anisbenbrahim/Documents/projet/edf/neo4j_data
 docker run --publish=7474:7474 --publish=7687:7687 --volume=$NEO4J_PATH:/data neo4j:latest
 
 
