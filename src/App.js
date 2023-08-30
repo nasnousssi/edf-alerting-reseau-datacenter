@@ -20,9 +20,10 @@ import config from "./config";
 const App = () => {
  const [records, setRecords] = useState([]);
  const [services, setServices] = useState([]);
+ const [components, setComponents] = useState([]);
  const [filterServices, setFilterServices] = useState([]);
+ const [filterComponent, setFilterComponent] = useState([]);
  const [intervalQyery, setIntervalQuery] = useState(10000);
- const [intervalEvent, setIntervalEvent] = useState(null);
  const [dateQuery, setDateQuery] = useState(); 
 
 
@@ -38,43 +39,48 @@ const App = () => {
 )
 
 
-function getAlerts(){
+function getAlerts() {
   updateMovie().then(res => {
+    if (res) {
+      setRecords(res.records);
 
-    if(res){
-      setRecords(res.records)
+      const servicesSet = new Set();
+      const componentsSet = new Set();
 
+      res.records.forEach(item => {
+        const services = item.get("services");
+        if (Array.isArray(services)) {
+          services.forEach(service => servicesSet.add(service));
+        }
 
-const servicesSet = new Set(); 
-res.records.forEach(item => {
-  const services = item.get("services");
-  if (Array.isArray(services)) {
-    services.forEach(service => servicesSet.add(service));
-  }
-});
+        componentsSet.add(item.get("e.device")); // Corrected line
+      });
 
-const distinctServices = Array.from(servicesSet).map(service => ({
-  key: service,
-  text: service,
-  value: service,
-}));
+      const distinctServices = Array.from(servicesSet).map(service => ({
+        key: service,
+        text: service,
+        value: service,
+      }));
 
-    setServices(distinctServices)
+      setServices(distinctServices);
 
+      const distinctComponents = Array.from(componentsSet).map(component => ({
+        key: component,
+        text: component,
+        value: component,
+      }));
+
+      setComponents(distinctComponents);
     }
-    
-  })
-
-
+  });
 }
-
 
 
  useEffect(()=> {
   getAlerts()
   var inter = setInterval(() => { getAlerts()}, intervalQyery)
 
-   setIntervalEvent(inter);   
+   //setIntervalEvent(inter);   
 
   return () => {
 
@@ -99,12 +105,24 @@ const handleServiceFilterChange = (event, {value}) => {
 
   setFilterServices(value)
 };
+const handleComponentFilterChange = (event, {value}) => {
+
+  setFilterComponent(value)
+};
 const addTagToFilter = (event, value) => {
 
 
   console.log(value.children)
   if (!filterServices.includes(value.children)) {
     setFilterServices([...filterServices, value.children]);
+  }
+};
+const addComponentToFilter = (event, value) => {
+
+
+  console.log(value.children)
+  if (!filterComponent.includes(value.children)) {
+    setFilterComponent([...filterComponent, value.children]);
   }
 };
 
@@ -120,12 +138,14 @@ var result = <div></div>
 
     result = records.map((element) => {
 
-      console.log(filterServices.length)
+      console.log(filterComponent.length)
+      console.log(filterComponent)
+      console.log(filterServices.length === 0 && filterComponent === 0)
 
-      if(filterServices.length === 0 || filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item))){
+      if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
 
      return ( <Table.Row>
-      <Table.Cell><Label key={element.get("e.device")}>{element.get("e.device")}</Label></Table.Cell>
+      <Table.Cell><Label key={element.get("e.device")} onClick={addComponentToFilter}>{element.get("e.device")}</Label></Table.Cell>
         <Table.Cell>{element.get("e.component")}</Table.Cell>
         <Table.Cell>{element.get("services").map(item =>  (<Label key={item} onClick={addTagToFilter}>{item}</Label>))}</Table.Cell>
         <Table.Cell>
@@ -206,6 +226,14 @@ return (
            />
            
 
+          <Dropdown 
+          placeholder='Composant'  
+          multiple 
+          selection 
+          options={components}
+          onChange={handleComponentFilterChange}
+          value={filterComponent}
+           />
 
 
 
