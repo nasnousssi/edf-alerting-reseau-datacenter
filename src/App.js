@@ -18,8 +18,9 @@ import config from "./config";
 
 
 const App = () => {
- const [records, setRecords] = useState();
- const [loading, setLoading] = useState();
+ const [records, setRecords] = useState([]);
+ const [services, setServices] = useState([]);
+ const [filterServices, setFilterServices] = useState([]);
  const [intervalQyery, setIntervalQuery] = useState(10000);
  const [intervalEvent, setIntervalEvent] = useState(null);
  const [dateQuery, setDateQuery] = useState(); 
@@ -40,7 +41,28 @@ const App = () => {
 function getAlerts(){
   updateMovie().then(res => {
 
-    setRecords(res.records)
+    if(res){
+      setRecords(res.records)
+
+
+const servicesSet = new Set(); 
+res.records.forEach(item => {
+  const services = item.get("services");
+  if (Array.isArray(services)) {
+    services.forEach(service => servicesSet.add(service));
+  }
+});
+
+const distinctServices = Array.from(servicesSet).map(service => ({
+  key: service,
+  text: service,
+  value: service,
+}));
+
+    setServices(distinctServices)
+
+    }
+    
   })
 
 
@@ -73,6 +95,18 @@ const handleIntervalChange = (event, {value}) => {
   setIntervalQuery(newInterval);
 };
 
+const handleServiceFilterChange = (event, {value}) => {
+
+  setFilterServices(value)
+};
+const addTagToFilter = (event, value) => {
+
+
+  console.log(value.children)
+  if (!filterServices.includes(value.children)) {
+    setFilterServices([...filterServices, value.children]);
+  }
+};
 
 var result = <div></div>
 
@@ -80,19 +114,28 @@ var result = <div></div>
   //console.log(first)
   if(records){
     //console.log(first.get("pls"))
+   
     
-    result = records.map((element) => 
 
-      <Table.Row>
+
+    result = records.map((element) => {
+
+      console.log(filterServices.length)
+
+      if(filterServices.length === 0 || filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item))){
+
+     return ( <Table.Row>
       <Table.Cell><Label key={element.get("e.device")}>{element.get("e.device")}</Label></Table.Cell>
         <Table.Cell>{element.get("e.component")}</Table.Cell>
-        <Table.Cell>{element.get("services").map(item =>  (<Label key={item}>{item}</Label>))}</Table.Cell>
+        <Table.Cell>{element.get("services").map(item =>  (<Label key={item} onClick={addTagToFilter}>{item}</Label>))}</Table.Cell>
         <Table.Cell>
           {+element.get("pls")*100/(+element.get("pls") + +element.get("good"))}%</Table.Cell>
         <Table.Cell>{+element.get("pls") + +element.get("good")}</Table.Cell>
       </Table.Row>
+     )
 
-
+      }
+    }
     );
   }
   
@@ -134,6 +177,8 @@ const countryOptions = [
   { key: '600', value: '600000', text: '10 Minutes' },
 ]
 
+
+
 return (
   <div>
     <Menu fixed='top' inverted>
@@ -151,7 +196,15 @@ return (
         onChange={handleIntervalChange}
   />
 
-
+          <Dropdown 
+          placeholder='Applications'  
+          multiple 
+          selection 
+          options={services}
+          onChange={handleServiceFilterChange}
+          value={filterServices}
+           />
+           
 
 
 
