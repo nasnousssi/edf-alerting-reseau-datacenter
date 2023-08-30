@@ -97,7 +97,6 @@ function getAlerts() {
 
 const handleIntervalChange = (event, {value}) => {
   const newInterval = parseInt(value, 10);
-  console.log(newInterval)
   setIntervalQuery(newInterval);
 };
 
@@ -112,7 +111,6 @@ const handleComponentFilterChange = (event, {value}) => {
 const addTagToFilter = (event, value) => {
 
 
-  console.log(value.children)
   if (!filterServices.includes(value.children)) {
     setFilterServices([...filterServices, value.children]);
   }
@@ -120,7 +118,6 @@ const addTagToFilter = (event, value) => {
 const addComponentToFilter = (event, value) => {
 
 
-  console.log(value.children)
   if (!filterComponent.includes(value.children)) {
     setFilterComponent([...filterComponent, value.children]);
   }
@@ -138,9 +135,6 @@ var result = <div></div>
 
     result = records.map((element) => {
 
-      console.log(filterComponent.length)
-      console.log(filterComponent)
-      console.log(filterServices.length === 0 && filterComponent === 0)
 
       if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
 
