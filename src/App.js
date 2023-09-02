@@ -12,7 +12,7 @@ import {
 import { useReadCypher, useLazyReadCypher } from 'use-neo4j'
 import { Graph } from "react-d3-graph";
 
-import config from "./config";
+import config, { height, width } from "./config";
 
 
 
@@ -25,6 +25,7 @@ const App = () => {
  const [filterComponent, setFilterComponent] = useState([]);
  const [intervalQyery, setIntervalQuery] = useState(10000);
  const [dateQuery, setDateQuery] = useState(); 
+ const graphRef = React.useRef(null)
 
 
  const [ updateMovie, { loadingT, firstT } ] = useLazyReadCypher(
@@ -155,22 +156,137 @@ var result = <div></div>
   
 
 
- 
+function getGraph(){
+
+  var nodes = []
+  var edges = []
 
 
- const data = {
-  nodes: [{ id: "Harry" }, { id: "Sally" }, { id: "Alice" }],
-  links: [
-    { source: "Harry", target: "Sally" },
-    { source: "Harry", target: "Alice" },
-  ],
+  
+  records.forEach(element => {
+   
+    if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
+
+    nodes.push({id: element.get("e.device")})
+    element.get("services").forEach(el => {
+      nodes.push({id: el})
+      edges.push({source: element.get("e.device"), target: el})
+    })
+
+  }
+  })
+
+  return {
+    nodes: nodes,
+    links: edges, 
+    focusedNodeId: "suuuuuuuuuuuuuuu"
+  }
+} 
+var data = getGraph()
+
+
+//  const data = {
+//   nodes: [{ id: "Harry" }, { id: "Sally" }, { id: "Alice" }],
+//   links: [
+//     { source: "Harry", target: "Sally" },
+//     { source: "Harry", target: "Alice" },
+//   ],
+// };
+
+const getDimensions = () => {
+  const element = graphRef.current;
+  if (element) {
+    const dimensions = element.getBoundingClientRect();
+    
+    return dimensions
+    console.log('Element dimensions:', dimensions);
+  } else {
+
+    return {
+    width: 0, 
+    height: 0
+    }
+  }
 };
 
-const myConfig = {
+var dim = getDimensions()
+
+var myConfig = {}
+
+
+
+
+var co = {}
+
+
+
+
+
+
+
+
+
+
+
+if(dim && dim.width > 0 ){
+ co = {"automaticRearrangeAfterDropNode":false,
+
+ "directed":true,
+ "focusAnimationDuration":0.75,
+
+
+
+ "width": dim.width, 
+ "height": dim.height,
+ "highlightDegree":2,
+ "highlightOpacity":0.2,
+ "linkHighlightBehavior":true,
+ "maxZoom":12,"minZoom":0.05,
+ "initialZoom":1,
+ "nodeHighlightBehavior":true,
+ "panAndZoom":true,
+ "staticGraph":false,
+ "staticGraphWithDragAndDrop":false,
+ "d3":{
+  "alphaTarget":0.05,
+  "gravity":-250,
+  "linkLength":120,
+  "linkStrength":2,
+  "disableLinkForce":false
+},
+"node":{
+  "color":"#d3d3d3",
+  "fontColor":"black",
+  "fontSize":10,
+  "fontWeight":"normal",
+  "highlightColor":"red",
+  "highlightFontSize":14,
+  "highlightFontWeight":"bold",
+  "highlightStrokeColor":"red",
+  "highlightStrokeWidth":1.5,
+  "labelPosition":"",
+  "mouseCursor":"crosshair",
+  "opacity":0.9,
+  "renderLabel":true,
+  "size":200,
+  "strokeColor":"none",
+  "strokeWidth":1.5,
+  "svg":"",
+  "symbolType":"circle",
+  "viewGenerator":null},
+  "link":{"color":"lightgray","fontColor":"black","fontSize":8,"fontWeight":"normal","highlightColor":"red","highlightFontSize":8,"highlightFontWeight":"normal","labelProperty":"label","mouseCursor":"pointer","opacity":1,"renderLabel":false,"semanticStrokeWidth":true,"strokeWidth":3,"markerHeight":6,"markerWidth":6,"type":"STRAIGHT","selfLinkDirection":"TOP_RIGHT","strokeDasharray":0,"strokeDashoffset":0,"strokeLinecap":"butt"}}
+
+ myConfig = {
+  collapsible: true,
   nodeHighlightBehavior: true,
+  automaticRearrangeAfterDropNode: true,
+  initialZoom: 2,
+  directed:true,
+width: dim.width, 
+height: dim.height,
   node: {
     color: "lightgreen",
-    size: 120,
+    size: 140,
     highlightStrokeColor: "blue",
   },
   link: {
@@ -178,6 +294,7 @@ const myConfig = {
   },
 };
 
+}
 
 
 
@@ -273,12 +390,12 @@ return (
     </Segment>
       </Grid.Column>
       <Grid.Column width={8}>
-      <Segment>
-    <div id="graph-container" className="graph-container">
-    <Graph id="graph" config={myConfig} data={data}  />
-    </div>
-    </Segment>
-      </Grid.Column>
+
+      <div ref={graphRef} style={{ width: '100%', height: '100%' }}>
+   { dim.width && <Graph id="my-graph" config={myConfig} data={data}  />}
+      </div>
+
+      </Grid.Column >
     </Grid.Row>
 
 
