@@ -1,4 +1,4 @@
-import React, {useEffect, useState, FC} from 'react'
+import React, {useEffect, useState, FC, useRef} from 'react'
 import {
   Container,
   Dropdown,
@@ -17,12 +17,12 @@ import config, { height, width } from "./config";
 
 import "@react-sigma/core/lib/react-sigma.min.css";
 import { MultiDirectedGraph } from "graphology";
-import { SigmaContainer, useRegisterEvents, useSigma, ControlsContainer} from "@react-sigma/core";
+import { SigmaContainer, useRegisterEvents, useSigma, useLoadGraph} from "@react-sigma/core";
 import { LayoutForceAtlas2Control } from "@react-sigma/layout-forceatlas2";
 
 
 
-import {Sigma, RandomizeNodePositions, RelativeSize, NodeShapes, EdgeShapes} from 'react-sigma';
+import {Sigma, RandomizeNodePositions, RelativeSize, NodeShapes, EdgeShapes, ForceAtlas2} from 'react-sigma';
 
 
 
@@ -35,17 +35,121 @@ const App = () => {
  const [filterComponent, setFilterComponent] = useState([]);
  const [intervalQyery, setIntervalQuery] = useState(10000);
  const [currentPage, setCurrentPage] = useState(1);
- const [dateQuery, setDateQuery] = useState(); 
+ const [allNodes, setAllNodes] = useState([]); 
+ const refContainer = useRef(null);
  const graphRef = React.useRef(null)
+ const [graphData, setGraphData] = useState({
+  nodes: allNodes,
+  edges: [],
+});
 
 
 const numElementPerPage = 5
 
 
+
+// React.useEffect(() => {
+//   const filteredData = {
+//     nodes: allNodes.filter(node => filterComponent.includes(node.id) || filterServices.includes(node.id)),
+//     edges: [], // You can update edges as needed
+//   };
+//   setGraphData(filteredData);
+// }, [allNodes, filterComponent, filterServices]);
+
+
+const MyGraph: FC = () => {
+  const loadGraph = useLoadGraph();
+
+  useEffect(() => {
+
+
+
+    // Create the graph
+    const graph = new MultiDirectedGraph();
+    
+    records.forEach((element, index) => {
+
+       if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
+
+
+      var item = element.get("e.device")
+      graph.addNode(item, { x: 10+index, y: 10+index, label: item, size: 10 });
+
+
+      element.get("services").forEach((el, ind) => {
+    // console.log(el)
+    // graph.addNode(el, { x: index+ind + 1, y: index + ind , label: el, size: 10 });
+    // graph.addEdgeWithKey("rel_"+ item+ "_" + el, item, el, { label: "HAS" });
+
+    // graph.addEdgeWithKey("rel_alerte_" + el, "Alerte", el, { label: "Alerte" });
+    
+      graph.addNode(el, { x: ind+index*100, y: ind+index*100, label: el, size: 10 });
+      graph.addEdgeWithKey(item+ "_" + el, item, el, { label: "REL_2" });
+    // myGraph.nodes.push({id: el, label: el, color: '#FF0' ,size: 3})
+    // myGraph.edges.push({id:item+ "_" + el,  source: item, target: el})
+    // myGraph.edges.push({id: "Alerte_" + el,  source: "Alerte", target: el})
+  })
+
+    }
+    })
+
+    // graph.addNode("A", { x: 0, y: 0, label: "Node A", size: 10 });
+    // graph.addNode("B", { x: 1, y: 1, label: "Node B", size: 10 });
+    // graph.addEdgeWithKey("rel1", "A", "B", { label: "REL_1" });
+    //
+    loadGraph(graph);
+  }, [loadGraph, filterComponent, filterServices]);
+
+  return null;
+};
+
+
+
+React.useEffect(() => {
+
+  const filteredData = {
+    nodes: [],
+    edges: [], // You can update edges as needed
+  };
+
+
+  filteredData.nodes.push({id: "Alerte", label: "Alerte"})
+  records.forEach((element, index) => {
+ 
+    // if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
+    var item = element.get("e.device")
+  // graph.addNode(item, { x: index, y: index, label: item, size: 10 });
+    filteredData.nodes.push({id: item, label: item, color: '#FF0', size: 10 })
+  
+
+    //setAllNodes(prevArray => [...prevArray, {id: item, label: item, color: '#FF0', size: 3 }])
+
+    element.get("services").forEach((el, ind) => {
+  
+      
+     // setAllNodes(prevArray => [...prevArray, {id: el, label: el, color: '#FF0' ,size: 10}])
+
+      filteredData.nodes.push({id: el, label: el, color: '#FF0' ,size: 10})
+      filteredData.edges.push({id:item+ "_" + el,  source: item, target: el})
+      filteredData.edges.push({id: "Alerte_" + el,  source: "Alerte", target: el})
+    })
+  
+  // }
+  })
+
+  setGraphData(filteredData);
+
+
+
+}, [ records, filterComponent, filterServices]);
+
  const GraphEvents: React.FC = () => {
   const registerEvents = useRegisterEvents();
   const sigma = useSigma();
   const [draggedNode, setDraggedNode] = useState(null);
+
+
+
 
   useEffect(() => {
     // Register the events
@@ -218,6 +322,9 @@ var result = <div></div>
     //console.log(first.get("pls"))
    
     
+   
+
+
 
 
     result = records.map((element) => {
@@ -274,47 +381,47 @@ const countryOptions = [
 
 
 
-//const graph = new MultiDirectedGraph();
-var nodes = []
-var edges = []
+// //const graph = new MultiDirectedGraph();
+// var nodes = []
+// var edges = []
 
 
-var myGraph = {
-  nodes : [],
-  edges : []
-}
+// var myGraph = {
+//   nodes : [],
+//   edges : []
+// }
 
-// graph.addNode("Alerte", { x: 10, y: 10, label: "Alete", size: 10 });
-nodes.push({id: "Alerte", label: "Alerte"})
+// // graph.addNode("Alerte", { x: 10, y: 10, label: "Alete", size: 10 });
+// nodes.push({id: "Alerte", label: "Alerte"})
 
-records.forEach((element, index) => {
+// records.forEach((element, index) => {
  
-   if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
-  var item = element.get("e.device")
-// graph.addNode(item, { x: index, y: index, label: item, size: 10 });
-myGraph.nodes.push({id: item, label: item})
-  element.get("services").forEach((el, ind) => {
-    // console.log(el)
-    // graph.addNode(el, { x: index+ind + 1, y: index + ind , label: el, size: 10 });
-    // graph.addEdgeWithKey("rel_"+ item+ "_" + el, item, el, { label: "HAS" });
+//   // if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
+//   var item = element.get("e.device")
+// // graph.addNode(item, { x: index, y: index, label: item, size: 10 });
+//   myGraph.nodes.push({id: item, label: item, color: '#FF0', size: 3 })
+//   element.get("services").forEach((el, ind) => {
+//     // console.log(el)
+//     // graph.addNode(el, { x: index+ind + 1, y: index + ind , label: el, size: 10 });
+//     // graph.addEdgeWithKey("rel_"+ item+ "_" + el, item, el, { label: "HAS" });
 
-    // graph.addEdgeWithKey("rel_alerte_" + el, "Alerte", el, { label: "Alerte" });
-    myGraph.nodes.push({id: el, label: el})
-    myGraph.edges.push({id:item+ "_" + el,  source: item, target: el})
-    myGraph.edges.push({id: "Alerte_" + el,  source: "Alerte", target: el})
-  })
+//     // graph.addEdgeWithKey("rel_alerte_" + el, "Alerte", el, { label: "Alerte" });
+//     myGraph.nodes.push({id: el, label: el, color: '#FF0' ,size: 3})
+//     myGraph.edges.push({id:item+ "_" + el,  source: item, target: el})
+//     myGraph.edges.push({id: "Alerte_" + el,  source: "Alerte", target: el})
+//   })
 
- }
-})
+// // }
+// })
 
 
-
+console.log(graphData)
 
 
 //let myGraph =  {nodes, edges};
 // let myGraph2 = {nodes:[{id:"n1", label:"Alice"}, {id:"n2", label:"Rabbit"}], edges:[{id:"e1",source:"n1",target:"n2",label:"SEES"}]};
 
-console.log(myGraph)
+//console.log(myGraph)
 // console.log(myGraph2)
 
 return (
@@ -405,11 +512,22 @@ return (
       <div ref={graphRef} style={{ width: '100%', height: '100%' }}>
    {/* { dim.width && <Graph id="my-graph" config={myConfig} data={data}  />} */}
 
-  {(myGraph.nodes.length > 0 && myGraph.edges.length >0) && <Sigma graph={myGraph} settings={{drawEdges: true, clone: true}}>
+  
+
+  {/* { graphData.nodes.length >0 && (<Sigma ref={refContainer} style={{ width: '100%', height: '100%' }} graph={graphData} settings={{drawEdges: true, clone: false}}>
   <RelativeSize initialSize={15}/>
   <RandomizeNodePositions/>
+</Sigma>) */}
+{/* } */}
 
-</Sigma>}
+
+<SigmaContainer
+      graph={MultiDirectedGraph}
+      style={{ width: '100%', height: '100%' }}
+      settings={{ renderEdgeLabels: true, defaultEdgeType: "arrow" }}
+    >
+      <MyGraph />
+    </SigmaContainer>
       </div>
 
       </Grid.Column >
