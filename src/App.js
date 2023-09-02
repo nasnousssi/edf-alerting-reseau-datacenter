@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react'
+import React, {useEffect, useState, FC} from 'react'
 import {
   Container,
   Dropdown,
@@ -7,12 +7,22 @@ import {
   Table,
   Segment,
   Label,
-  Grid
+  Grid,
+  Pagination
 } from 'semantic-ui-react'
 import { useReadCypher, useLazyReadCypher } from 'use-neo4j'
-import { Graph } from "react-d3-graph";
+// import { Graph } from "react-d3-graph";
 
 import config, { height, width } from "./config";
+
+import "@react-sigma/core/lib/react-sigma.min.css";
+import { MultiDirectedGraph } from "graphology";
+import { SigmaContainer, useRegisterEvents, useSigma, ControlsContainer} from "@react-sigma/core";
+import { LayoutForceAtlas2Control } from "@react-sigma/layout-forceatlas2";
+
+
+
+import {Sigma, RandomizeNodePositions, RelativeSize, NodeShapes, EdgeShapes} from 'react-sigma';
 
 
 
@@ -24,8 +34,77 @@ const App = () => {
  const [filterServices, setFilterServices] = useState([]);
  const [filterComponent, setFilterComponent] = useState([]);
  const [intervalQyery, setIntervalQuery] = useState(10000);
+ const [currentPage, setCurrentPage] = useState(1);
  const [dateQuery, setDateQuery] = useState(); 
  const graphRef = React.useRef(null)
+
+
+const numElementPerPage = 5
+
+
+ const GraphEvents: React.FC = () => {
+  const registerEvents = useRegisterEvents();
+  const sigma = useSigma();
+  const [draggedNode, setDraggedNode] = useState(null);
+
+  useEffect(() => {
+    // Register the events
+    registerEvents({
+      downNode: (e) => {
+        setDraggedNode(e.node);
+        sigma.getGraph().setNodeAttribute(e.node, "highlighted", true);
+      },
+      mouseup: (e) => {
+        if (draggedNode) {
+          setDraggedNode(null);
+          sigma.getGraph().removeNodeAttribute(draggedNode, "highlighted");
+        }
+      },
+      mousedown: (e) => {
+        // Disable the autoscale at the first down interaction
+        if (!sigma.getCustomBBox()) sigma.setCustomBBox(sigma.getBBox());
+      },
+      mousemove: (e) => {
+        if (draggedNode) {
+          // Get new position of node
+          const pos = sigma.viewportToGraph(e);
+          sigma.getGraph().setNodeAttribute(draggedNode, "x", pos.x);
+          sigma.getGraph().setNodeAttribute(draggedNode, "y", pos.y);
+
+          // Prevent sigma to move camera:
+          e.preventSigmaDefault();
+          e.original.preventDefault();
+          e.original.stopPropagation();
+        }
+      },
+      touchup: (e) => {
+        if (draggedNode) {
+          setDraggedNode(null);
+          sigma.getGraph().removeNodeAttribute(draggedNode, "highlighted");
+        }
+      },
+      touchdown: (e) => {
+        // Disable the autoscale at the first down interaction
+        if (!sigma.getCustomBBox()) sigma.setCustomBBox(sigma.getBBox());
+      },
+      touchmove: (e) => {
+        if (draggedNode) {
+          // Get new position of node
+          const pos = sigma.viewportToGraph(e);
+          sigma.getGraph().setNodeAttribute(draggedNode, "x", pos.x);
+          sigma.getGraph().setNodeAttribute(draggedNode, "y", pos.y);
+
+          // Prevent sigma to move camera:
+          e.preventSigmaDefault();
+          e.original.preventDefault();
+          e.original.stopPropagation();
+        }
+      },
+    });
+  }, [registerEvents, sigma, draggedNode]);
+
+  return null;
+};
 
 
  const [ updateMovie, { loadingT, firstT } ] = useLazyReadCypher(
@@ -96,6 +175,7 @@ function getAlerts() {
 
 
 
+
 const handleIntervalChange = (event, {value}) => {
   const newInterval = parseInt(value, 10);
   setIntervalQuery(newInterval);
@@ -105,6 +185,12 @@ const handleServiceFilterChange = (event, {value}) => {
 
   setFilterServices(value)
 };
+
+const handlePageChange = (event, {value}) => {
+
+  setCurrentPage(value)
+};
+
 const handleComponentFilterChange = (event, {value}) => {
 
   setFilterComponent(value)
@@ -156,145 +242,23 @@ var result = <div></div>
   
 
 
-function getGraph(){
-
-  var nodes = []
-  var edges = []
+  const LoadGraphWithByProp: FC = () => {
 
 
-  
-  records.forEach(element => {
-   
-    if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
+  // return {
+  //   nodes: nodes,
+  //   links: edges, 
+  //   focusedNodeId: "suuuuuuuuuuuuuuu"
+  // }
 
-    nodes.push({id: element.get("e.device")})
-    element.get("services").forEach(el => {
-      nodes.push({id: el})
-      edges.push({source: element.get("e.device"), target: el})
-    })
+ 
+ // graph.addNode("A", { x: 0, y: 0, label: "Node A", size: 10 });
+  //graph.addNode("B", { x: 1, y: 1, label: "Node B", size: 10 });
+  //graph.addEdgeWithKey("rel1", "A", "B", { label: "REL_1" });
 
-  }
-  })
-
-  return {
-    nodes: nodes,
-    links: edges, 
-    focusedNodeId: "suuuuuuuuuuuuuuu"
-  }
+  return ;
 } 
-var data = getGraph()
 
-
-//  const data = {
-//   nodes: [{ id: "Harry" }, { id: "Sally" }, { id: "Alice" }],
-//   links: [
-//     { source: "Harry", target: "Sally" },
-//     { source: "Harry", target: "Alice" },
-//   ],
-// };
-
-const getDimensions = () => {
-  const element = graphRef.current;
-  if (element) {
-    const dimensions = element.getBoundingClientRect();
-    
-    return dimensions
-    console.log('Element dimensions:', dimensions);
-  } else {
-
-    return {
-    width: 0, 
-    height: 0
-    }
-  }
-};
-
-var dim = getDimensions()
-
-var myConfig = {}
-
-
-
-
-var co = {}
-
-
-
-
-
-
-
-
-
-
-
-if(dim && dim.width > 0 ){
- co = {"automaticRearrangeAfterDropNode":false,
-
- "directed":true,
- "focusAnimationDuration":0.75,
-
-
-
- "width": dim.width, 
- "height": dim.height,
- "highlightDegree":2,
- "highlightOpacity":0.2,
- "linkHighlightBehavior":true,
- "maxZoom":12,"minZoom":0.05,
- "initialZoom":1,
- "nodeHighlightBehavior":true,
- "panAndZoom":true,
- "staticGraph":false,
- "staticGraphWithDragAndDrop":false,
- "d3":{
-  "alphaTarget":0.05,
-  "gravity":-250,
-  "linkLength":120,
-  "linkStrength":2,
-  "disableLinkForce":false
-},
-"node":{
-  "color":"#d3d3d3",
-  "fontColor":"black",
-  "fontSize":10,
-  "fontWeight":"normal",
-  "highlightColor":"red",
-  "highlightFontSize":14,
-  "highlightFontWeight":"bold",
-  "highlightStrokeColor":"red",
-  "highlightStrokeWidth":1.5,
-  "labelPosition":"",
-  "mouseCursor":"crosshair",
-  "opacity":0.9,
-  "renderLabel":true,
-  "size":200,
-  "strokeColor":"none",
-  "strokeWidth":1.5,
-  "svg":"",
-  "symbolType":"circle",
-  "viewGenerator":null},
-  "link":{"color":"lightgray","fontColor":"black","fontSize":8,"fontWeight":"normal","highlightColor":"red","highlightFontSize":8,"highlightFontWeight":"normal","labelProperty":"label","mouseCursor":"pointer","opacity":1,"renderLabel":false,"semanticStrokeWidth":true,"strokeWidth":3,"markerHeight":6,"markerWidth":6,"type":"STRAIGHT","selfLinkDirection":"TOP_RIGHT","strokeDasharray":0,"strokeDashoffset":0,"strokeLinecap":"butt"}}
-
- myConfig = {
-  collapsible: true,
-  nodeHighlightBehavior: true,
-  automaticRearrangeAfterDropNode: true,
-  initialZoom: 2,
-  directed:true,
-width: dim.width, 
-height: dim.height,
-  node: {
-    color: "lightgreen",
-    size: 140,
-    highlightStrokeColor: "blue",
-  },
-  link: {
-    highlightColor: "lightblue",
-  },
-};
-
-}
 
 
 
@@ -309,6 +273,49 @@ const countryOptions = [
 ]
 
 
+
+//const graph = new MultiDirectedGraph();
+var nodes = []
+var edges = []
+
+
+var myGraph = {
+  nodes : [],
+  edges : []
+}
+
+// graph.addNode("Alerte", { x: 10, y: 10, label: "Alete", size: 10 });
+nodes.push({id: "Alerte", label: "Alerte"})
+
+records.forEach((element, index) => {
+ 
+   if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
+  var item = element.get("e.device")
+// graph.addNode(item, { x: index, y: index, label: item, size: 10 });
+myGraph.nodes.push({id: item, label: item})
+  element.get("services").forEach((el, ind) => {
+    // console.log(el)
+    // graph.addNode(el, { x: index+ind + 1, y: index + ind , label: el, size: 10 });
+    // graph.addEdgeWithKey("rel_"+ item+ "_" + el, item, el, { label: "HAS" });
+
+    // graph.addEdgeWithKey("rel_alerte_" + el, "Alerte", el, { label: "Alerte" });
+    myGraph.nodes.push({id: el, label: el})
+    myGraph.edges.push({id:item+ "_" + el,  source: item, target: el})
+    myGraph.edges.push({id: "Alerte_" + el,  source: "Alerte", target: el})
+  })
+
+ }
+})
+
+
+
+
+
+//let myGraph =  {nodes, edges};
+// let myGraph2 = {nodes:[{id:"n1", label:"Alice"}, {id:"n2", label:"Rabbit"}], edges:[{id:"e1",source:"n1",target:"n2",label:"SEES"}]};
+
+console.log(myGraph)
+// console.log(myGraph2)
 
 return (
   <div>
@@ -365,8 +372,8 @@ return (
 
 
 
-    <Grid>
-    <Grid.Row>
+    <Grid celled padded style={{height: '100vh'}}>
+    <Grid.Row style={{height: '100%'}}> 
       <Grid.Column width={8}>
       <Segment basic padded='very'>
  <Table celled>
@@ -387,12 +394,22 @@ return (
 
     </Table.Body>
     </Table>
+
+
+   
     </Segment>
+    <Segment basic textAlign='center'> <Pagination defaultActivePage={1} totalPages={records.length/numElementPerPage + 1} onPageChange={handlePageChange}/></Segment>
       </Grid.Column>
       <Grid.Column width={8}>
 
       <div ref={graphRef} style={{ width: '100%', height: '100%' }}>
-   { dim.width && <Graph id="my-graph" config={myConfig} data={data}  />}
+   {/* { dim.width && <Graph id="my-graph" config={myConfig} data={data}  />} */}
+
+  {(myGraph.nodes.length > 0 && myGraph.edges.length >0) && <Sigma graph={myGraph} settings={{drawEdges: true, clone: true}}>
+  <RelativeSize initialSize={15}/>
+  <RandomizeNodePositions/>
+
+</Sigma>}
       </div>
 
       </Grid.Column >
