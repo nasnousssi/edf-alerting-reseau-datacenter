@@ -93,10 +93,13 @@ return pls, e.device, e.component, services, good
 create (n:CRITICTE { level:'Alerte'})
 create (n2:CRITICTE { level:'OK'})
 Create (s:SERVICE { service: 'GPS'})
-Create (s2:SERVICE { service: 'OLALA'})
+
 create (n)-[:HAS]->(s)
 create (e:EQUIPEMENT { component: 'slb', device:'DERREJNJND', type:'F5'})
+create (e2:EQUIPEMENT { component: 'swtich', device:'tzeczknczekn', type:'F5'})
 CREATE (e)-[:IN_FRONT_OF]->(s)
-CREATE (e)-[:IN_FRONT_OF]->(s2)
+
+Create (s2:SERVICE { service: 'OLALA'})
+CREATE (e2)-[:IN_FRONT_OF]->(s2)
 CREATE (n)-[:HAS]->(s2)
 ``````
