@@ -17,9 +17,9 @@ import config, { height, width } from "./config";
 
 import "@react-sigma/core/lib/react-sigma.min.css";
 import { MultiDirectedGraph } from "graphology";
-import { SigmaContainer, useRegisterEvents, useSigma, useLoadGraph} from "@react-sigma/core";
+import { SigmaContainer, useRegisterEvents, useSigma, useLoadGraph, ControlsContainer} from "@react-sigma/core";
+import { useWorkerLayoutForceAtlas2 } from "@react-sigma/layout-forceatlas2";
 import { LayoutForceAtlas2Control } from "@react-sigma/layout-forceatlas2";
-
 
 
 import {Sigma, RandomizeNodePositions, RelativeSize, NodeShapes, EdgeShapes, ForceAtlas2} from 'react-sigma';
@@ -57,6 +57,40 @@ const numElementPerPage = 5
 // }, [allNodes, filterComponent, filterServices]);
 
 
+function calculateNodePosition(totalNodes, nodeIndex, centerX, centerY, radius) {
+  const angleStep = (2 * Math.PI) / totalNodes;
+  const angle = nodeIndex * angleStep;
+  const x = centerX + radius * Math.cos(angle);
+  const y = centerY + radius * Math.sin(angle);
+
+  return { x, y };
+}
+
+
+function calculateNodePositionWithOffset(totalNodes, nodeIndex, centerX, centerY, radius, offsetDegrees) {
+  const angleStep = (2 * Math.PI) / totalNodes;
+  const angle = (nodeIndex * angleStep) + (offsetDegrees * (Math.PI / 180)); // Convert degrees to radians
+  const x = centerX + radius * Math.cos(angle);
+  const y = centerY + radius * Math.sin(angle);
+
+  return { x, y };
+}
+
+const Fa2: React.FC = () => {
+  const { start, kill, isRunning } = useWorkerLayoutForceAtlas2({ settings: { slowDown: 10 } });
+
+  useEffect(() => {
+    // start FA2
+    start();
+    return () => {
+      // Kill FA2 on unmount
+      kill();
+    };
+  }, [start, kill]);
+
+  return null;
+};
+
 const MyGraph: FC = () => {
   const loadGraph = useLoadGraph();
 
@@ -66,14 +100,19 @@ const MyGraph: FC = () => {
 
     // Create the graph
     const graph = new MultiDirectedGraph();
-    
+   // graph.addNode("Alerte", { x: 0, y: 0, label: "Alerte", size: 10 }); 
+
+    graph.addNode("Alerte", { x: 0, y: 0, label: "Alerte", size: 10 });
     records.forEach((element, index) => {
 
        if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
 
 
       var item = element.get("e.device")
-      graph.addNode(item, { x: 10+index, y: 10+index, label: item, size: 10 });
+
+     var coords =  calculateNodePositionWithOffset(records.length, index, 0, 0, 20, 0)
+
+      graph.addNode(item, { x: coords.x, y: coords.y, label: item, size: 10, color: "#FA4F40"});
 
 
       element.get("services").forEach((el, ind) => {
@@ -82,9 +121,12 @@ const MyGraph: FC = () => {
     // graph.addEdgeWithKey("rel_"+ item+ "_" + el, item, el, { label: "HAS" });
 
     // graph.addEdgeWithKey("rel_alerte_" + el, "Alerte", el, { label: "Alerte" });
-    
-      graph.addNode(el, { x: ind+index*100, y: ind+index*100, label: el, size: 10 });
+   
+    var corrschild =  calculateNodePositionWithOffset(element.get("services").length, ind, coords.x, coords.y, 10, 360)
+      graph.addNode(el, { x: corrschild.x, y: corrschild.y, label: el, size: 10 });
       graph.addEdgeWithKey(item+ "_" + el, item, el, { label: "REL_2" });
+
+      graph.addEdgeWithKey("Alerte_" + el, "Alerte", el, { label: "ALERT"+ind });
     // myGraph.nodes.push({id: el, label: el, color: '#FF0' ,size: 3})
     // myGraph.edges.push({id:item+ "_" + el,  source: item, target: el})
     // myGraph.edges.push({id: "Alerte_" + el,  source: "Alerte", target: el})
@@ -508,7 +550,7 @@ return (
     <Segment basic textAlign='center'> <Pagination defaultActivePage={1} totalPages={records.length/numElementPerPage + 1} onPageChange={handlePageChange}/></Segment>
       </Grid.Column>
       <Grid.Column width={8}>
-
+      
       <div ref={graphRef} style={{ width: '100%', height: '100%' }}>
    {/* { dim.width && <Graph id="my-graph" config={myConfig} data={data}  />} */}
 
@@ -523,11 +565,15 @@ return (
 
 <SigmaContainer
       graph={MultiDirectedGraph}
-      style={{ width: '100%', height: '100%' }}
-      settings={{ renderEdgeLabels: true, defaultEdgeType: "arrow" }}
+      style={{ width: '90%', height: '100%' }}
+      settings={{defaultEdgeType: "arrow" }}
     >
       <MyGraph />
+     
+       {/* // <Fa2 /> */}
+     
     </SigmaContainer>
+
       </div>
 
       </Grid.Column >
