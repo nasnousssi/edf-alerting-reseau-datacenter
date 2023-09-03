@@ -28,6 +28,9 @@ import {Sigma, RandomizeNodePositions, RelativeSize, NodeShapes, EdgeShapes, For
 
 
 const App = () => {
+
+  const [allRecords, setAllRecords] = useState([]);
+
  const [records, setRecords] = useState([]);
  const [services, setServices] = useState([]);
  const [components, setComponents] = useState([]);
@@ -35,6 +38,7 @@ const App = () => {
  const [filterComponent, setFilterComponent] = useState([]);
  const [intervalQyery, setIntervalQuery] = useState(10000);
  const [currentPage, setCurrentPage] = useState(1);
+ const [totalPage, setTotalPage] = useState(records.length);
  const [allNodes, setAllNodes] = useState([]); 
  const refContainer = useRef(null);
  const graphRef = React.useRef(null)
@@ -44,8 +48,62 @@ const App = () => {
 });
 
 
-const numElementPerPage = 5
+const numElementPerPage = 100000
 
+
+function getAlerts() {
+  updateMovie().then(res => {
+    if (res) {
+      setAllRecords(res.records)
+      console.log("édoudodoududodu")
+      console.log(records)
+
+      const servicesSet = new Set();
+      const componentsSet = new Set();
+
+      res.records.forEach(item => {
+        const services = item.get("services");
+        if (Array.isArray(services)) {
+          services.forEach(service => servicesSet.add(service));
+        }
+
+        componentsSet.add(item.get("e.device")); // Corrected line
+      });
+
+      const distinctServices = Array.from(servicesSet).map(service => ({
+        key: service,
+        text: service,
+        value: service,
+      }));
+
+      setServices(distinctServices);
+
+      const distinctComponents = Array.from(componentsSet).map(component => ({
+        key: component,
+        text: component,
+        value: component,
+      }));
+
+      setComponents(distinctComponents);
+    }
+  });
+}
+
+useEffect(()=> {
+  getAlerts()
+  var inter = setInterval(() => { getAlerts()}, intervalQyery)
+
+   //setIntervalEvent(inter);   
+
+  return () => {
+
+    if(inter){
+      clearInterval(inter)
+    }
+  
+  }
+
+}, [intervalQyery]);
 
 
 // React.useEffect(() => {
@@ -57,14 +115,7 @@ const numElementPerPage = 5
 // }, [allNodes, filterComponent, filterServices]);
 
 
-function calculateNodePosition(totalNodes, nodeIndex, centerX, centerY, radius) {
-  const angleStep = (2 * Math.PI) / totalNodes;
-  const angle = nodeIndex * angleStep;
-  const x = centerX + radius * Math.cos(angle);
-  const y = centerY + radius * Math.sin(angle);
 
-  return { x, y };
-}
 
 
 function calculateNodePositionWithOffset(totalNodes, nodeIndex, centerX, centerY, radius, offsetDegrees) {
@@ -105,6 +156,7 @@ const MyGraph: FC = () => {
     graph.addNode("Alerte", { x: 0, y: 0, label: "Alerte", size: 10 });
     records.forEach((element, index) => {
 
+      if (element){
        if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
 
 
@@ -132,7 +184,8 @@ const MyGraph: FC = () => {
     // myGraph.edges.push({id: "Alerte_" + el,  source: "Alerte", target: el})
   })
 
-    }
+    } // end if 
+  }
     })
 
     // graph.addNode("A", { x: 0, y: 0, label: "Node A", size: 10 });
@@ -140,7 +193,7 @@ const MyGraph: FC = () => {
     // graph.addEdgeWithKey("rel1", "A", "B", { label: "REL_1" });
     //
     loadGraph(graph);
-  }, [loadGraph, filterComponent, filterServices]);
+  }, [loadGraph, allRecords,  records, filterComponent, filterServices]);
 
   return null;
 };
@@ -156,21 +209,17 @@ React.useEffect(() => {
 
 
   filteredData.nodes.push({id: "Alerte", label: "Alerte"})
+
+  
   records.forEach((element, index) => {
  
     // if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
     var item = element.get("e.device")
-  // graph.addNode(item, { x: index, y: index, label: item, size: 10 });
     filteredData.nodes.push({id: item, label: item, color: '#FF0', size: 10 })
-  
 
-    //setAllNodes(prevArray => [...prevArray, {id: item, label: item, color: '#FF0', size: 3 }])
 
     element.get("services").forEach((el, ind) => {
   
-      
-     // setAllNodes(prevArray => [...prevArray, {id: el, label: el, color: '#FF0' ,size: 10}])
-
       filteredData.nodes.push({id: el, label: el, color: '#FF0' ,size: 10})
       filteredData.edges.push({id:item+ "_" + el,  source: item, target: el})
       filteredData.edges.push({id: "Alerte_" + el,  source: "Alerte", target: el})
@@ -181,76 +230,32 @@ React.useEffect(() => {
 
   setGraphData(filteredData);
 
+}, [allRecords,  records, filterComponent, filterServices]);
 
 
-}, [ records, filterComponent, filterServices]);
-
- const GraphEvents: React.FC = () => {
-  const registerEvents = useRegisterEvents();
-  const sigma = useSigma();
-  const [draggedNode, setDraggedNode] = useState(null);
+React.useEffect(() => {
 
 
+  var r = []
+    allRecords.forEach((element) => {
+  
+    if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
+
+        r.push(element)
+    }
+
+  })
 
 
-  useEffect(() => {
-    // Register the events
-    registerEvents({
-      downNode: (e) => {
-        setDraggedNode(e.node);
-        sigma.getGraph().setNodeAttribute(e.node, "highlighted", true);
-      },
-      mouseup: (e) => {
-        if (draggedNode) {
-          setDraggedNode(null);
-          sigma.getGraph().removeNodeAttribute(draggedNode, "highlighted");
-        }
-      },
-      mousedown: (e) => {
-        // Disable the autoscale at the first down interaction
-        if (!sigma.getCustomBBox()) sigma.setCustomBBox(sigma.getBBox());
-      },
-      mousemove: (e) => {
-        if (draggedNode) {
-          // Get new position of node
-          const pos = sigma.viewportToGraph(e);
-          sigma.getGraph().setNodeAttribute(draggedNode, "x", pos.x);
-          sigma.getGraph().setNodeAttribute(draggedNode, "y", pos.y);
+    setCurrentPage(1)
+    setRecords(paginateData(r, 1, numElementPerPage));
+ 
+  
+  console.log("yyjergkrngjrngejrngejn")
+  console.log(Math.ceil(r.length/numElementPerPage))
+  setTotalPage(Math.ceil(r.length/numElementPerPage))
 
-          // Prevent sigma to move camera:
-          e.preventSigmaDefault();
-          e.original.preventDefault();
-          e.original.stopPropagation();
-        }
-      },
-      touchup: (e) => {
-        if (draggedNode) {
-          setDraggedNode(null);
-          sigma.getGraph().removeNodeAttribute(draggedNode, "highlighted");
-        }
-      },
-      touchdown: (e) => {
-        // Disable the autoscale at the first down interaction
-        if (!sigma.getCustomBBox()) sigma.setCustomBBox(sigma.getBBox());
-      },
-      touchmove: (e) => {
-        if (draggedNode) {
-          // Get new position of node
-          const pos = sigma.viewportToGraph(e);
-          sigma.getGraph().setNodeAttribute(draggedNode, "x", pos.x);
-          sigma.getGraph().setNodeAttribute(draggedNode, "y", pos.y);
-
-          // Prevent sigma to move camera:
-          e.preventSigmaDefault();
-          e.original.preventDefault();
-          e.original.stopPropagation();
-        }
-      },
-    });
-  }, [registerEvents, sigma, draggedNode]);
-
-  return null;
-};
+}, [allRecords, filterComponent, filterServices]);
 
 
  const [ updateMovie, { loadingT, firstT } ] = useLazyReadCypher(
@@ -263,60 +268,15 @@ React.useEffect(() => {
   WITH pls, services, e , count(r2) as good
   return pls, e.device, e.component, services, good`
 )
-
-
-function getAlerts() {
-  updateMovie().then(res => {
-    if (res) {
-      setRecords(res.records);
-
-      const servicesSet = new Set();
-      const componentsSet = new Set();
-
-      res.records.forEach(item => {
-        const services = item.get("services");
-        if (Array.isArray(services)) {
-          services.forEach(service => servicesSet.add(service));
-        }
-
-        componentsSet.add(item.get("e.device")); // Corrected line
-      });
-
-      const distinctServices = Array.from(servicesSet).map(service => ({
-        key: service,
-        text: service,
-        value: service,
-      }));
-
-      setServices(distinctServices);
-
-      const distinctComponents = Array.from(componentsSet).map(component => ({
-        key: component,
-        text: component,
-        value: component,
-      }));
-
-      setComponents(distinctComponents);
-    }
-  });
+function paginateData(data, pageNumber, itemsPerPage) {
+  const startIndex = (pageNumber - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  return data.slice(startIndex, endIndex);
 }
 
 
- useEffect(()=> {
-  getAlerts()
-  var inter = setInterval(() => { getAlerts()}, intervalQyery)
 
-   //setIntervalEvent(inter);   
 
-  return () => {
-
-    if(inter){
-      clearInterval(inter)
-    }
-  
-  }
-
-}, [intervalQyery]);
 
 
 
@@ -332,9 +292,16 @@ const handleServiceFilterChange = (event, {value}) => {
   setFilterServices(value)
 };
 
-const handlePageChange = (event, {value}) => {
+const handlePageChange = (event, value) => {
 
+  
+  console.log("yemememeesisisisissisisisisisis")
+  console.log(value)
   setCurrentPage(value)
+
+
+  setRecords(paginateData(allRecords, value.activePage, numElementPerPage));
+
 };
 
 const handleComponentFilterChange = (event, {value}) => {
@@ -356,6 +323,17 @@ const addComponentToFilter = (event, value) => {
   }
 };
 
+
+const getNumPages = () =>{
+  if((filterServices.length === 0 && filterComponent.length === 0)){
+    console.log(allRecords.length/numElementPerPage)
+    return Math.ceil(allRecords.length/numElementPerPage)
+  } else {
+    console.log(records.length/numElementPerPage)
+    return 
+  }
+}
+
 var result = <div></div>
 
 
@@ -365,7 +343,8 @@ var result = <div></div>
    
     
    
-
+   console.log("records")
+   console.log(records) 
 
 
 
@@ -390,23 +369,6 @@ var result = <div></div>
   }
   
 
-
-  const LoadGraphWithByProp: FC = () => {
-
-
-  // return {
-  //   nodes: nodes,
-  //   links: edges, 
-  //   focusedNodeId: "suuuuuuuuuuuuuuu"
-  // }
-
- 
- // graph.addNode("A", { x: 0, y: 0, label: "Node A", size: 10 });
-  //graph.addNode("B", { x: 1, y: 1, label: "Node B", size: 10 });
-  //graph.addEdgeWithKey("rel1", "A", "B", { label: "REL_1" });
-
-  return ;
-} 
 
 
 
@@ -547,7 +509,7 @@ return (
 
    
     </Segment>
-    <Segment basic textAlign='center'> <Pagination defaultActivePage={1} totalPages={records.length/numElementPerPage + 1} onPageChange={handlePageChange}/></Segment>
+    <Segment basic textAlign='center'> <Pagination activePage={currentPage}  defaultActivePage={1} totalPages={totalPage} onPageChange={handlePageChange}/></Segment>
       </Grid.Column>
       <Grid.Column width={8}>
       
