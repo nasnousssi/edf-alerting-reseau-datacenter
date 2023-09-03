@@ -153,7 +153,7 @@ const MyGraph: FC = () => {
     const graph = new MultiDirectedGraph();
    // graph.addNode("Alerte", { x: 0, y: 0, label: "Alerte", size: 10 }); 
 
-    graph.addNode("Alerte", { x: 0, y: 0, label: "Alerte", size: 10 });
+    graph.addNode("Alerte", { x: 0, y: 0, label: "Alerte", size: 30 });
     records.forEach((element, index) => {
 
       if (element){
@@ -167,18 +167,22 @@ const MyGraph: FC = () => {
       graph.addNode(item, { x: coords.x, y: coords.y, label: item, size: 10, color: "#FA4F40"});
 
 
-      element.get("services").forEach((el, ind) => {
+      var s = element.get("services")
+
+      graph.addEdgeWithKey("Alerte_" + item, "Alerte", item, { label: "ALERT"+index, size: element.get("pls")*30/(+element.get("pls") + +element.get("good")) } );
+
+      s.forEach((el, ind) => {
     // console.log(el)
     // graph.addNode(el, { x: index+ind + 1, y: index + ind , label: el, size: 10 });
     // graph.addEdgeWithKey("rel_"+ item+ "_" + el, item, el, { label: "HAS" });
 
     // graph.addEdgeWithKey("rel_alerte_" + el, "Alerte", el, { label: "Alerte" });
    
-    var corrschild =  calculateNodePositionWithOffset(element.get("services").length, ind, coords.x, coords.y, 10, 360)
+    var corrschild =  calculateNodePositionWithOffset(s.length, ind, coords.x, coords.y, 10, 360)
       graph.addNode(el, { x: corrschild.x, y: corrschild.y, label: el, size: 10 });
       graph.addEdgeWithKey(item+ "_" + el, item, el, { label: "REL_2" });
 
-      graph.addEdgeWithKey("Alerte_" + el, "Alerte", el, { label: "ALERT"+ind });
+    
     // myGraph.nodes.push({id: el, label: el, color: '#FF0' ,size: 3})
     // myGraph.edges.push({id:item+ "_" + el,  source: item, target: el})
     // myGraph.edges.push({id: "Alerte_" + el,  source: "Alerte", target: el})
