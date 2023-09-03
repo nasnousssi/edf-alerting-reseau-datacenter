@@ -89,6 +89,25 @@ function getAlerts() {
   });
 }
 
+function orderByMetric(elements) {
+  // Use the sort method with a custom comparator function
+  return elements.sort((elementA, elementB) => {
+    const metricA = calculateMetric(elementA);
+    const metricB = calculateMetric(elementB);
+    
+    // Sort in descending order (highest to lowest)
+    return metricB - metricA;
+  });
+}
+
+function calculateMetric(element) {
+  const pls = +element.get("pls");
+  const good = +element.get("good");
+  
+  // Calculate the metric
+  return (pls * 100) / (pls + good);
+}
+
 useEffect(()=> {
   getAlerts()
   var inter = setInterval(() => { getAlerts()}, intervalQyery)
@@ -148,6 +167,7 @@ const MyGraph: FC = () => {
   useEffect(() => {
 
 
+    var allServiceInGraph = []
 
     // Create the graph
     const graph = new MultiDirectedGraph();
@@ -172,17 +192,20 @@ const MyGraph: FC = () => {
       graph.addEdgeWithKey("Alerte_" + item, "Alerte", item, { label: "ALERT"+index, size: element.get("pls")*30/(+element.get("pls") + +element.get("good")) } );
 
       s.forEach((el, ind) => {
+
     // console.log(el)
     // graph.addNode(el, { x: index+ind + 1, y: index + ind , label: el, size: 10 });
     // graph.addEdgeWithKey("rel_"+ item+ "_" + el, item, el, { label: "HAS" });
 
     // graph.addEdgeWithKey("rel_alerte_" + el, "Alerte", el, { label: "Alerte" });
    
+    if(!allServiceInGraph.includes(el)){
     var corrschild =  calculateNodePositionWithOffset(s.length, ind, coords.x, coords.y, 10, 360)
       graph.addNode(el, { x: corrschild.x, y: corrschild.y, label: el, size: 10 });
       graph.addEdgeWithKey(item+ "_" + el, item, el, { label: "REL_2" });
 
-    
+    }
+    allServiceInGraph.push(el)
     // myGraph.nodes.push({id: el, label: el, color: '#FF0' ,size: 3})
     // myGraph.edges.push({id:item+ "_" + el,  source: item, target: el})
     // myGraph.edges.push({id: "Alerte_" + el,  source: "Alerte", target: el})
@@ -204,6 +227,18 @@ const MyGraph: FC = () => {
 
 
 
+function removeDuplicates(array) {
+  const uniqueMap = new Map();
+  return array.filter(obj => {
+    const id = obj.id;
+    if (!uniqueMap.has(id)) {
+      uniqueMap.set(id, true);
+      return true;
+    }
+    return false;
+  });
+}
+
 React.useEffect(() => {
 
   const filteredData = {
@@ -212,26 +247,32 @@ React.useEffect(() => {
   };
 
 
-  filteredData.nodes.push({id: "Alerte", label: "Alerte"})
+  var nodesWithDuplicate = []
+
+  nodesWithDuplicate.push({id: "Alerte", label: "Alerte"})
 
   
   records.forEach((element, index) => {
  
     // if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
     var item = element.get("e.device")
-    filteredData.nodes.push({id: item, label: item, color: '#FF0', size: 10 })
+    nodesWithDuplicate.push({id: item, label: item, color: '#FF0', size: 10 })
 
 
     element.get("services").forEach((el, ind) => {
   
-      filteredData.nodes.push({id: el, label: el, color: '#FF0' ,size: 10})
-      filteredData.edges.push({id:item+ "_" + el,  source: item, target: el})
+      nodesWithDuplicate.push({id: el, label: el, color: '#FF0' ,size: 10})
+      filteredData.edges.push({id:item+ "_" + el+ ind,  source: item, target: el})
       filteredData.edges.push({id: "Alerte_" + el,  source: "Alerte", target: el})
     })
   
   // }
   })
 
+filteredData.nodes = [ ...removeDuplicates(nodesWithDuplicate)]
+
+console.log("wwawwawawaaaaaaaa")
+console.log(filteredData.nodes )
   setGraphData(filteredData);
 
 }, [allRecords,  records, filterComponent, filterServices]);
@@ -250,7 +291,8 @@ React.useEffect(() => {
 
   })
 
-
+console.log("edfff")
+  console.log(r)
     setCurrentPage(1)
     setRecords(paginateData(r, 1, numElementPerPage));
  
@@ -275,7 +317,7 @@ React.useEffect(() => {
 function paginateData(data, pageNumber, itemsPerPage) {
   const startIndex = (pageNumber - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  return data.slice(startIndex, endIndex);
+  return orderByMetric(data);
 }
 
 
@@ -492,9 +534,9 @@ return (
 
 
     <Grid celled padded style={{height: '100vh'}}>
-    <Grid.Row style={{height: '100%'}}> 
-      <Grid.Column width={8}>
-      <Segment basic padded='very'>
+    <Grid.Row style={{height: '100vh'}}> 
+      <Grid.Column width={8} style={{height: '100vh'}}>
+      <Segment basic padded='very' style={{ height: '100%', overflowY: 'auto' }}>
  <Table celled>
     <Table.Header>
       <Table.Row>
@@ -517,7 +559,7 @@ return (
 
    
     </Segment>
-    <Segment basic textAlign='center'> <Pagination activePage={currentPage}  defaultActivePage={1} totalPages={totalPage} onPageChange={handlePageChange}/></Segment>
+    {/* <Segment basic textAlign='center'> <Pagination activePage={currentPage}  defaultActivePage={1} totalPages={totalPage} onPageChange={handlePageChange}/></Segment> */}
       </Grid.Column>
       <Grid.Column width={8}>
       
