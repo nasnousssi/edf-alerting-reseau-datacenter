@@ -354,12 +354,12 @@ var result = <div></div>
       if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
 
      return ( <Table.Row>
-      <Table.Cell><Label key={element.get("e.device")} onClick={addComponentToFilter}>{element.get("e.device")}</Label></Table.Cell>
-        <Table.Cell>{element.get("e.component")}</Table.Cell>
-        <Table.Cell>{element.get("services").map(item =>  (<Label key={item} onClick={addTagToFilter}>{item}</Label>))}</Table.Cell>
-        <Table.Cell>
+      <Table.Cell textAlign='center'><Label key={element.get("e.device")} onClick={addComponentToFilter}>{element.get("e.device")}</Label></Table.Cell>
+        <Table.Cell textAlign='center'>{element.get("e.component")}</Table.Cell>
+        <Table.Cell textAlign='center'>{element.get("services").map(item =>  (<Label key={item} onClick={addTagToFilter}>{item}</Label>))}</Table.Cell>
+        <Table.Cell textAlign='center'>
           {+element.get("pls")*100/(+element.get("pls") + +element.get("good"))}%</Table.Cell>
-        <Table.Cell>{+element.get("pls") + +element.get("good")}</Table.Cell>
+        <Table.Cell textAlign='center'>{+element.get("pls") + +element.get("good")}</Table.Cell>
       </Table.Row>
      )
 
@@ -431,15 +431,17 @@ console.log(graphData)
 return (
   <div>
     <Menu fixed='top' inverted>
-      <Container>
-        <Menu.Item as='a' header>
+    <Menu.Item as='a' header>
           POC Neo4j 
         </Menu.Item>
+      <Container>
+
         
 
         <Dropdown
         defaultValue="10000"
         search 
+        item
         selection
         options={countryOptions}
         onChange={handleIntervalChange}
@@ -449,6 +451,7 @@ return (
           placeholder='Applications'  
           multiple 
           selection 
+          item
           options={services}
           onChange={handleServiceFilterChange}
           value={filterServices}
@@ -459,6 +462,7 @@ return (
           placeholder='Composant'  
           multiple 
           selection 
+          item
           options={components}
           onChange={handleComponentFilterChange}
           value={filterComponent}
@@ -490,11 +494,11 @@ return (
  <Table celled>
     <Table.Header>
       <Table.Row>
-        <Table.HeaderCell>Composant reseau</Table.HeaderCell>
-        <Table.HeaderCell>type</Table.HeaderCell>
-        <Table.HeaderCell>Application en alerte</Table.HeaderCell>
-        <Table.HeaderCell>Etat du composant reseau </Table.HeaderCell>
-        <Table.HeaderCell>nombre d'application total</Table.HeaderCell>
+        <Table.HeaderCell textAlign='center'>Composant reseau</Table.HeaderCell>
+        <Table.HeaderCell textAlign='center'>type</Table.HeaderCell>
+        <Table.HeaderCell textAlign='center'>Application en alerte</Table.HeaderCell>
+        <Table.HeaderCell textAlign='center'>Etat du composant reseau </Table.HeaderCell>
+        <Table.HeaderCell textAlign='center'>nombre d'application total</Table.HeaderCell>
       </Table.Row>
     </Table.Header>
 
