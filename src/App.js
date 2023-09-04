@@ -28,6 +28,9 @@ import {Sigma, RandomizeNodePositions, RelativeSize, NodeShapes, EdgeShapes, For
 
 
 const App = () => {
+
+  const [allRecords, setAllRecords] = useState([]);
+
  const [records, setRecords] = useState([]);
  const [services, setServices] = useState([]);
  const [components, setComponents] = useState([]);
@@ -35,6 +38,7 @@ const App = () => {
  const [filterComponent, setFilterComponent] = useState([]);
  const [intervalQyery, setIntervalQuery] = useState(10000);
  const [currentPage, setCurrentPage] = useState(1);
+ const [totalPage, setTotalPage] = useState(records.length);
  const [allNodes, setAllNodes] = useState([]); 
  const refContainer = useRef(null);
  const graphRef = React.useRef(null)
@@ -44,231 +48,15 @@ const App = () => {
 });
 
 
-const numElementPerPage = 5
-
-
-
-// React.useEffect(() => {
-//   const filteredData = {
-//     nodes: allNodes.filter(node => filterComponent.includes(node.id) || filterServices.includes(node.id)),
-//     edges: [], // You can update edges as needed
-//   };
-//   setGraphData(filteredData);
-// }, [allNodes, filterComponent, filterServices]);
-
-
-function calculateNodePosition(totalNodes, nodeIndex, centerX, centerY, radius) {
-  const angleStep = (2 * Math.PI) / totalNodes;
-  const angle = nodeIndex * angleStep;
-  const x = centerX + radius * Math.cos(angle);
-  const y = centerY + radius * Math.sin(angle);
-
-  return { x, y };
-}
-
-
-function calculateNodePositionWithOffset(totalNodes, nodeIndex, centerX, centerY, radius, offsetDegrees) {
-  const angleStep = (2 * Math.PI) / totalNodes;
-  const angle = (nodeIndex * angleStep) + (offsetDegrees * (Math.PI / 180)); // Convert degrees to radians
-  const x = centerX + radius * Math.cos(angle);
-  const y = centerY + radius * Math.sin(angle);
-
-  return { x, y };
-}
-
-const Fa2: React.FC = () => {
-  const { start, kill, isRunning } = useWorkerLayoutForceAtlas2({ settings: { slowDown: 10 } });
-
-  useEffect(() => {
-    // start FA2
-    start();
-    return () => {
-      // Kill FA2 on unmount
-      kill();
-    };
-  }, [start, kill]);
-
-  return null;
-};
-
-const MyGraph: FC = () => {
-  const loadGraph = useLoadGraph();
-
-  useEffect(() => {
-
-
-
-    // Create the graph
-    const graph = new MultiDirectedGraph();
-   // graph.addNode("Alerte", { x: 0, y: 0, label: "Alerte", size: 10 }); 
-
-    graph.addNode("Alerte", { x: 0, y: 0, label: "Alerte", size: 10 });
-    records.forEach((element, index) => {
-
-       if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
-
-
-      var item = element.get("e.device")
-
-     var coords =  calculateNodePositionWithOffset(records.length, index, 0, 0, 20, 0)
-
-      graph.addNode(item, { x: coords.x, y: coords.y, label: item, size: 10, color: "#FA4F40"});
-
-
-      element.get("services").forEach((el, ind) => {
-    // console.log(el)
-    // graph.addNode(el, { x: index+ind + 1, y: index + ind , label: el, size: 10 });
-    // graph.addEdgeWithKey("rel_"+ item+ "_" + el, item, el, { label: "HAS" });
-
-    // graph.addEdgeWithKey("rel_alerte_" + el, "Alerte", el, { label: "Alerte" });
-   
-    var corrschild =  calculateNodePositionWithOffset(element.get("services").length, ind, coords.x, coords.y, 10, 360)
-      graph.addNode(el, { x: corrschild.x, y: corrschild.y, label: el, size: 10 });
-      graph.addEdgeWithKey(item+ "_" + el, item, el, { label: "REL_2" });
-
-      graph.addEdgeWithKey("Alerte_" + el, "Alerte", el, { label: "ALERT"+ind });
-    // myGraph.nodes.push({id: el, label: el, color: '#FF0' ,size: 3})
-    // myGraph.edges.push({id:item+ "_" + el,  source: item, target: el})
-    // myGraph.edges.push({id: "Alerte_" + el,  source: "Alerte", target: el})
-  })
-
-    }
-    })
-
-    // graph.addNode("A", { x: 0, y: 0, label: "Node A", size: 10 });
-    // graph.addNode("B", { x: 1, y: 1, label: "Node B", size: 10 });
-    // graph.addEdgeWithKey("rel1", "A", "B", { label: "REL_1" });
-    //
-    loadGraph(graph);
-  }, [loadGraph, filterComponent, filterServices]);
-
-  return null;
-};
-
-
-
-React.useEffect(() => {
-
-  const filteredData = {
-    nodes: [],
-    edges: [], // You can update edges as needed
-  };
-
-
-  filteredData.nodes.push({id: "Alerte", label: "Alerte"})
-  records.forEach((element, index) => {
- 
-    // if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
-    var item = element.get("e.device")
-  // graph.addNode(item, { x: index, y: index, label: item, size: 10 });
-    filteredData.nodes.push({id: item, label: item, color: '#FF0', size: 10 })
-  
-
-    //setAllNodes(prevArray => [...prevArray, {id: item, label: item, color: '#FF0', size: 3 }])
-
-    element.get("services").forEach((el, ind) => {
-  
-      
-     // setAllNodes(prevArray => [...prevArray, {id: el, label: el, color: '#FF0' ,size: 10}])
-
-      filteredData.nodes.push({id: el, label: el, color: '#FF0' ,size: 10})
-      filteredData.edges.push({id:item+ "_" + el,  source: item, target: el})
-      filteredData.edges.push({id: "Alerte_" + el,  source: "Alerte", target: el})
-    })
-  
-  // }
-  })
-
-  setGraphData(filteredData);
-
-
-
-}, [ records, filterComponent, filterServices]);
-
- const GraphEvents: React.FC = () => {
-  const registerEvents = useRegisterEvents();
-  const sigma = useSigma();
-  const [draggedNode, setDraggedNode] = useState(null);
-
-
-
-
-  useEffect(() => {
-    // Register the events
-    registerEvents({
-      downNode: (e) => {
-        setDraggedNode(e.node);
-        sigma.getGraph().setNodeAttribute(e.node, "highlighted", true);
-      },
-      mouseup: (e) => {
-        if (draggedNode) {
-          setDraggedNode(null);
-          sigma.getGraph().removeNodeAttribute(draggedNode, "highlighted");
-        }
-      },
-      mousedown: (e) => {
-        // Disable the autoscale at the first down interaction
-        if (!sigma.getCustomBBox()) sigma.setCustomBBox(sigma.getBBox());
-      },
-      mousemove: (e) => {
-        if (draggedNode) {
-          // Get new position of node
-          const pos = sigma.viewportToGraph(e);
-          sigma.getGraph().setNodeAttribute(draggedNode, "x", pos.x);
-          sigma.getGraph().setNodeAttribute(draggedNode, "y", pos.y);
-
-          // Prevent sigma to move camera:
-          e.preventSigmaDefault();
-          e.original.preventDefault();
-          e.original.stopPropagation();
-        }
-      },
-      touchup: (e) => {
-        if (draggedNode) {
-          setDraggedNode(null);
-          sigma.getGraph().removeNodeAttribute(draggedNode, "highlighted");
-        }
-      },
-      touchdown: (e) => {
-        // Disable the autoscale at the first down interaction
-        if (!sigma.getCustomBBox()) sigma.setCustomBBox(sigma.getBBox());
-      },
-      touchmove: (e) => {
-        if (draggedNode) {
-          // Get new position of node
-          const pos = sigma.viewportToGraph(e);
-          sigma.getGraph().setNodeAttribute(draggedNode, "x", pos.x);
-          sigma.getGraph().setNodeAttribute(draggedNode, "y", pos.y);
-
-          // Prevent sigma to move camera:
-          e.preventSigmaDefault();
-          e.original.preventDefault();
-          e.original.stopPropagation();
-        }
-      },
-    });
-  }, [registerEvents, sigma, draggedNode]);
-
-  return null;
-};
-
-
- const [ updateMovie, { loadingT, firstT } ] = useLazyReadCypher(
-  `Match (c:CRITICTE)
-  where c.level = 'Alerte'
-  OPTIONAL MATCH  (c)-[r:HAS]->(s:SERVICE)<- [f:IN_FRONT_OF]-(e:EQUIPEMENT) 
-  WITH count(f) as pls, collect(s.service) as services, e
-  OPTIONAL MATCH (e)-[f2:IN_FRONT_OF]->(s2:SERVICE)<- [r2:HAS] -(c2:CRITICTE)
-  WHERE c2 <> 'Alerte'
-  WITH pls, services, e , count(r2) as good
-  return pls, e.device, e.component, services, good`
-)
+const numElementPerPage = 100000
 
 
 function getAlerts() {
   updateMovie().then(res => {
     if (res) {
-      setRecords(res.records);
+      setAllRecords(res.records)
+      console.log("édoudodoududodu")
+      console.log(records)
 
       const servicesSet = new Set();
       const componentsSet = new Set();
@@ -301,8 +89,26 @@ function getAlerts() {
   });
 }
 
+function orderByMetric(elements) {
+  // Use the sort method with a custom comparator function
+  return elements.sort((elementA, elementB) => {
+    const metricA = calculateMetric(elementA);
+    const metricB = calculateMetric(elementB);
+    
+    // Sort in descending order (highest to lowest)
+    return metricB - metricA;
+  });
+}
 
- useEffect(()=> {
+function calculateMetric(element) {
+  const pls = +element.get("pls");
+  const good = +element.get("good");
+  
+  // Calculate the metric
+  return (pls * 100) / (pls + good);
+}
+
+useEffect(()=> {
   getAlerts()
   var inter = setInterval(() => { getAlerts()}, intervalQyery)
 
@@ -319,6 +125,206 @@ function getAlerts() {
 }, [intervalQyery]);
 
 
+// React.useEffect(() => {
+//   const filteredData = {
+//     nodes: allNodes.filter(node => filterComponent.includes(node.id) || filterServices.includes(node.id)),
+//     edges: [], // You can update edges as needed
+//   };
+//   setGraphData(filteredData);
+// }, [allNodes, filterComponent, filterServices]);
+
+
+
+
+
+function calculateNodePositionWithOffset(totalNodes, nodeIndex, centerX, centerY, radius, offsetDegrees) {
+  const angleStep = (2 * Math.PI) / totalNodes;
+  const angle = (nodeIndex * angleStep) + (offsetDegrees * (Math.PI / 180)); // Convert degrees to radians
+  const x = centerX + radius * Math.cos(angle);
+  const y = centerY + radius * Math.sin(angle);
+
+  return { x, y };
+}
+
+const Fa2: React.FC = () => {
+  const { start, kill, isRunning } = useWorkerLayoutForceAtlas2({ settings: { slowDown: 10 } });
+
+  useEffect(() => {
+    // start FA2
+    start();
+    return () => {
+      // Kill FA2 on unmount
+      kill();
+    };
+  }, [start, kill]);
+
+  return null;
+};
+
+const MyGraph: FC = () => {
+  const loadGraph = useLoadGraph();
+
+  useEffect(() => {
+
+
+    var allServiceInGraph = []
+
+    // Create the graph
+    const graph = new MultiDirectedGraph();
+   // graph.addNode("Alerte", { x: 0, y: 0, label: "Alerte", size: 10 }); 
+
+    graph.addNode("Alerte", { x: 0, y: 0, label: "Alerte", size: 30 });
+    records.forEach((element, index) => {
+
+      if (element){
+       if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
+
+
+      var item = element.get("e.device")
+
+     var coords =  calculateNodePositionWithOffset(records.length, index, 0, 0, 20, 0)
+
+      graph.addNode(item, { x: coords.x, y: coords.y, label: item, size: 10, color: "#FA4F40"});
+
+
+      var s = element.get("services")
+
+      graph.addEdgeWithKey("Alerte_" + item, "Alerte", item, { label: "ALERT"+index, size: element.get("pls")*30/(+element.get("pls") + +element.get("good")) } );
+
+      s.forEach((el, ind) => {
+
+    // console.log(el)
+    // graph.addNode(el, { x: index+ind + 1, y: index + ind , label: el, size: 10 });
+    // graph.addEdgeWithKey("rel_"+ item+ "_" + el, item, el, { label: "HAS" });
+
+    // graph.addEdgeWithKey("rel_alerte_" + el, "Alerte", el, { label: "Alerte" });
+   
+    if(!allServiceInGraph.includes(el)){
+    var corrschild =  calculateNodePositionWithOffset(s.length, ind, coords.x, coords.y, 10, 360)
+      graph.addNode(el, { x: corrschild.x, y: corrschild.y, label: el, size: 10 });
+      graph.addEdgeWithKey(item+ "_" + el, item, el, { label: "REL_2" });
+
+    }
+    allServiceInGraph.push(el)
+    // myGraph.nodes.push({id: el, label: el, color: '#FF0' ,size: 3})
+    // myGraph.edges.push({id:item+ "_" + el,  source: item, target: el})
+    // myGraph.edges.push({id: "Alerte_" + el,  source: "Alerte", target: el})
+  })
+
+    } // end if 
+  }
+    })
+
+    // graph.addNode("A", { x: 0, y: 0, label: "Node A", size: 10 });
+    // graph.addNode("B", { x: 1, y: 1, label: "Node B", size: 10 });
+    // graph.addEdgeWithKey("rel1", "A", "B", { label: "REL_1" });
+    //
+    loadGraph(graph);
+  }, [loadGraph, allRecords,  records, filterComponent, filterServices]);
+
+  return null;
+};
+
+
+
+function removeDuplicates(array) {
+  const uniqueMap = new Map();
+  return array.filter(obj => {
+    const id = obj.id;
+    if (!uniqueMap.has(id)) {
+      uniqueMap.set(id, true);
+      return true;
+    }
+    return false;
+  });
+}
+
+React.useEffect(() => {
+
+  const filteredData = {
+    nodes: [],
+    edges: [], // You can update edges as needed
+  };
+
+
+  var nodesWithDuplicate = []
+
+  nodesWithDuplicate.push({id: "Alerte", label: "Alerte"})
+
+  
+  records.forEach((element, index) => {
+ 
+    // if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
+    var item = element.get("e.device")
+    nodesWithDuplicate.push({id: item, label: item, color: '#FF0', size: 10 })
+
+
+    element.get("services").forEach((el, ind) => {
+  
+      nodesWithDuplicate.push({id: el, label: el, color: '#FF0' ,size: 10})
+      filteredData.edges.push({id:item+ "_" + el+ ind,  source: item, target: el})
+      filteredData.edges.push({id: "Alerte_" + el,  source: "Alerte", target: el})
+    })
+  
+  // }
+  })
+
+filteredData.nodes = [ ...removeDuplicates(nodesWithDuplicate)]
+
+console.log("wwawwawawaaaaaaaa")
+console.log(filteredData.nodes )
+  setGraphData(filteredData);
+
+}, [allRecords,  records, filterComponent, filterServices]);
+
+
+React.useEffect(() => {
+
+
+  var r = []
+    allRecords.forEach((element) => {
+  
+    if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
+
+        r.push(element)
+    }
+
+  })
+
+console.log("edfff")
+  console.log(r)
+    setCurrentPage(1)
+    setRecords(paginateData(r, 1, numElementPerPage));
+ 
+  
+  console.log("yyjergkrngjrngejrngejn")
+  console.log(Math.ceil(r.length/numElementPerPage))
+  setTotalPage(Math.ceil(r.length/numElementPerPage))
+
+}, [allRecords, filterComponent, filterServices]);
+
+
+ const [ updateMovie, { loadingT, firstT } ] = useLazyReadCypher(
+  `Match (c:CRITICTE)
+  where c.level = 'Alerte'
+  OPTIONAL MATCH  (c)-[r:HAS]->(s:SERVICE)<- [f:IN_FRONT_OF]-(e:EQUIPEMENT) 
+  WITH count(f) as pls, collect(s.service) as services, e
+  OPTIONAL MATCH (e)-[f2:IN_FRONT_OF]->(s2:SERVICE)<- [r2:HAS] -(c2:CRITICTE)
+  WHERE c2 <> 'Alerte'
+  WITH pls, services, e , count(r2) as good
+  return pls, e.device, e.component, services, good`
+)
+function paginateData(data, pageNumber, itemsPerPage) {
+  const startIndex = (pageNumber - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  return orderByMetric(data);
+}
+
+
+
+
+
+
 
 
 
@@ -332,9 +338,16 @@ const handleServiceFilterChange = (event, {value}) => {
   setFilterServices(value)
 };
 
-const handlePageChange = (event, {value}) => {
+const handlePageChange = (event, value) => {
 
+  
+  console.log("yemememeesisisisissisisisisisis")
+  console.log(value)
   setCurrentPage(value)
+
+
+  setRecords(paginateData(allRecords, value.activePage, numElementPerPage));
+
 };
 
 const handleComponentFilterChange = (event, {value}) => {
@@ -356,6 +369,17 @@ const addComponentToFilter = (event, value) => {
   }
 };
 
+
+const getNumPages = () =>{
+  if((filterServices.length === 0 && filterComponent.length === 0)){
+    console.log(allRecords.length/numElementPerPage)
+    return Math.ceil(allRecords.length/numElementPerPage)
+  } else {
+    console.log(records.length/numElementPerPage)
+    return 
+  }
+}
+
 var result = <div></div>
 
 
@@ -365,7 +389,8 @@ var result = <div></div>
    
     
    
-
+   console.log("records")
+   console.log(records) 
 
 
 
@@ -375,12 +400,12 @@ var result = <div></div>
       if((filterServices.length === 0 && filterComponent.length === 0) || (filterServices.length > 0 && filterServices.some(item => element.get("services").includes(item) ) ) ||  (filterComponent.length > 0 && filterComponent.some(item => element.get("e.device") === item ) ) ){
 
      return ( <Table.Row>
-      <Table.Cell><Label key={element.get("e.device")} onClick={addComponentToFilter}>{element.get("e.device")}</Label></Table.Cell>
-        <Table.Cell>{element.get("e.component")}</Table.Cell>
-        <Table.Cell>{element.get("services").map(item =>  (<Label key={item} onClick={addTagToFilter}>{item}</Label>))}</Table.Cell>
-        <Table.Cell>
+      <Table.Cell textAlign='center'><Label key={element.get("e.device")} onClick={addComponentToFilter}>{element.get("e.device")}</Label></Table.Cell>
+        <Table.Cell textAlign='center'>{element.get("e.component")}</Table.Cell>
+        <Table.Cell textAlign='center'>{element.get("services").map(item =>  (<Label key={item} onClick={addTagToFilter}>{item}</Label>))}</Table.Cell>
+        <Table.Cell textAlign='center'>
           {+element.get("pls")*100/(+element.get("pls") + +element.get("good"))}%</Table.Cell>
-        <Table.Cell>{+element.get("pls") + +element.get("good")}</Table.Cell>
+        <Table.Cell textAlign='center'>{+element.get("pls") + +element.get("good")}</Table.Cell>
       </Table.Row>
      )
 
@@ -390,23 +415,6 @@ var result = <div></div>
   }
   
 
-
-  const LoadGraphWithByProp: FC = () => {
-
-
-  // return {
-  //   nodes: nodes,
-  //   links: edges, 
-  //   focusedNodeId: "suuuuuuuuuuuuuuu"
-  // }
-
- 
- // graph.addNode("A", { x: 0, y: 0, label: "Node A", size: 10 });
-  //graph.addNode("B", { x: 1, y: 1, label: "Node B", size: 10 });
-  //graph.addEdgeWithKey("rel1", "A", "B", { label: "REL_1" });
-
-  return ;
-} 
 
 
 
@@ -469,15 +477,17 @@ console.log(graphData)
 return (
   <div>
     <Menu fixed='top' inverted>
-      <Container>
-        <Menu.Item as='a' header>
+    <Menu.Item as='a' header>
           POC Neo4j 
         </Menu.Item>
+      <Container>
+
         
 
         <Dropdown
         defaultValue="10000"
         search 
+        item
         selection
         options={countryOptions}
         onChange={handleIntervalChange}
@@ -487,6 +497,7 @@ return (
           placeholder='Applications'  
           multiple 
           selection 
+          item
           options={services}
           onChange={handleServiceFilterChange}
           value={filterServices}
@@ -497,6 +508,7 @@ return (
           placeholder='Composant'  
           multiple 
           selection 
+          item
           options={components}
           onChange={handleComponentFilterChange}
           value={filterComponent}
@@ -522,17 +534,17 @@ return (
 
 
     <Grid celled padded style={{height: '100vh'}}>
-    <Grid.Row style={{height: '100%'}}> 
-      <Grid.Column width={8}>
-      <Segment basic padded='very'>
+    <Grid.Row style={{height: '100vh'}}> 
+      <Grid.Column width={8} style={{height: '100vh'}}>
+      <Segment basic padded='very' style={{ height: '100%', overflowY: 'auto' }}>
  <Table celled>
     <Table.Header>
       <Table.Row>
-        <Table.HeaderCell>Composant reseau</Table.HeaderCell>
-        <Table.HeaderCell>type</Table.HeaderCell>
-        <Table.HeaderCell>Application en alerte</Table.HeaderCell>
-        <Table.HeaderCell>Etat du composant reseau </Table.HeaderCell>
-        <Table.HeaderCell>nombre d'application total</Table.HeaderCell>
+        <Table.HeaderCell textAlign='center'>Composant reseau</Table.HeaderCell>
+        <Table.HeaderCell textAlign='center'>type</Table.HeaderCell>
+        <Table.HeaderCell textAlign='center'>Application en alerte</Table.HeaderCell>
+        <Table.HeaderCell textAlign='center'>Etat du composant reseau </Table.HeaderCell>
+        <Table.HeaderCell textAlign='center'>nombre d'application total</Table.HeaderCell>
       </Table.Row>
     </Table.Header>
 
@@ -547,7 +559,7 @@ return (
 
    
     </Segment>
-    <Segment basic textAlign='center'> <Pagination defaultActivePage={1} totalPages={records.length/numElementPerPage + 1} onPageChange={handlePageChange}/></Segment>
+    {/* <Segment basic textAlign='center'> <Pagination activePage={currentPage}  defaultActivePage={1} totalPages={totalPage} onPageChange={handlePageChange}/></Segment> */}
       </Grid.Column>
       <Grid.Column width={8}>
       
