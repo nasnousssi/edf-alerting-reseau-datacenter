@@ -107,7 +107,11 @@ CREATE (n)-[:HAS]->(s2)
 create (e3:EQUIPEMENT { component: 'swtich', device:'tzeczknczedzdzedkn', type:'F5'})
 Create (s3:SERVICE { service: 'OLALA3'})
 CREATE (e3)-[:IN_FRONT_OF]->(s3)
-CREATE (n2)-[:HAS]->(s3)
+
+
+
+
+CREATE (n)-[:HAS]->(s3)
 
 
 

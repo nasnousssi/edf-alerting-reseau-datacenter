@@ -25,15 +25,69 @@ import { LayoutForceAtlas2Control } from "@react-sigma/layout-forceatlas2";
 import {Sigma, RandomizeNodePositions, RelativeSize, NodeShapes, EdgeShapes, ForceAtlas2} from 'react-sigma';
 
 
+import SemanticDatepicker from 'react-semantic-ui-datepickers';
+import 'react-semantic-ui-datepickers/dist/react-semantic-ui-datepickers.css';
+
 
 
 const App = () => {
+
+
+const getDateFrom = () => {
+// Get the current date and time
+const currentDate = new Date();
+
+// Subtract 15 minutes (in milliseconds) from the current date
+const fifteenMinutesAgo = new Date(currentDate.getTime() - 15 * 60 * 1000);
+
+// Extract the year, month, and day from the 15 minutes ago date
+const year = fifteenMinutesAgo.getFullYear();
+const month = fifteenMinutesAgo.getMonth() + 1; // Month is zero-based
+const day = fifteenMinutesAgo.getDate();
+
+// Create a new date with only the year, month, and day at midnight
+const dateOnly = new Date(year, month - 1, day, 0, 0, 0, 0); // Month is zero-based
+
+// Get the timestamp representing the date
+return dateOnly.getTime();
+}
+
+
+const currentDate = new Date();
+
+const currentHour = currentDate.getHours();
+const currentMinutes = currentDate.getMinutes();
+
+
+
+
+  const [fromDate, setFromDate] = useState(new Date(currentDate.getTime() - 15 * 60 * 1000));
+  const [toDate, setToDate] = useState(currentDate);
+
+
+  const [fromHour, setFromHour] = useState(new Date(currentDate.getTime() - 15 * 60 * 1000).getHours().toString());
+  const [fromMinutes, setFromMinutes] = useState(new Date(currentDate.getTime() - 15 * 60 * 1000).getMinutes().toString());
+
+  const [toHour, setToHour] = useState(currentHour.toString());
+  const [toMinutes, setToMinutes] = useState(currentMinutes.toString());
+
+
+  const [yearFrom, setYearFrom] = useState();
+  const [monthFrom, setMonthFrom] = useState();
+  const [dayFrom, setDayFrom] = useState();
+
+  
+  const [yearTo, setYearTo] = useState();
+  const [monthTo, setMonthTo] = useState();
+  const [dayTo, setDayTo] = useState();
+
 
   const [allRecords, setAllRecords] = useState([]);
 
  const [records, setRecords] = useState([]);
  const [services, setServices] = useState([]);
  const [components, setComponents] = useState([]);
+ //const [year , setYear] = useState(["2023", "2022"]);
  const [filterServices, setFilterServices] = useState([]);
  const [filterComponent, setFilterComponent] = useState([]);
  const [intervalQyery, setIntervalQuery] = useState(10000);
@@ -55,9 +109,7 @@ function getAlerts() {
   updateMovie().then(res => {
     if (res) {
       setAllRecords(res.records)
-      console.log("édoudodoududodu")
-      console.log(records)
-
+      
       const servicesSet = new Set();
       const componentsSet = new Set();
 
@@ -123,6 +175,20 @@ useEffect(()=> {
   }
 
 }, [intervalQyery]);
+
+
+
+
+/* filtre date */
+
+
+useEffect(()=> {
+
+  console.log("================================ called when filter changed")
+  getAlerts()
+
+}, [yearFrom, monthFrom, dayFrom, yearTo, monthTo, dayTo, fromHour, fromMinutes, toHour, toMinutes]);
+
 
 
 // React.useEffect(() => {
@@ -291,14 +357,10 @@ React.useEffect(() => {
 
   })
 
-console.log("edfff")
-  console.log(r)
     setCurrentPage(1)
     setRecords(paginateData(r, 1, numElementPerPage));
  
   
-  console.log("yyjergkrngjrngejrngejn")
-  console.log(Math.ceil(r.length/numElementPerPage))
   setTotalPage(Math.ceil(r.length/numElementPerPage))
 
 }, [allRecords, filterComponent, filterServices]);
@@ -307,11 +369,12 @@ console.log("edfff")
  const [ updateMovie, { loadingT, firstT } ] = useLazyReadCypher(
   `Match (c:CRITICTE)
   where c.level = 'Alerte'
-  OPTIONAL MATCH  (c)-[r:HAS]->(s:SERVICE)<- [f:IN_FRONT_OF]-(e:EQUIPEMENT) 
-  WITH count(f) as pls, collect(s.service) as services, e
-  OPTIONAL MATCH (e)-[f2:IN_FRONT_OF]->(s2:SERVICE)<- [r2:HAS] -(c2:CRITICTE)
-  WHERE c2 <> 'Alerte'
-  WITH pls, services, e , count(r2) as good
+  OPTIONAL MATCH  (c)-[r:HAS]->(s:SERVICE)<- [f:IN_FRONT_OF]-(e:EQUIPEMENT)
+  where r.date is not null and r.indicateur ='Etat SSA' and  datetime(r.date)  >  datetime({year: ${yearFrom}, month: ${monthFrom}, day: ${dayFrom}, hour: ${fromHour}, minute: ${fromMinutes}, second: 0, millisecond: 0}) and datetime(r.date)  <  datetime({year: ${yearTo}, month: ${monthTo}, day: ${dayTo}, hour: ${toHour}, minute: ${toMinutes}, second: 0, millisecond: 0})
+  WITH count(distinct f) as pls, collect(distinct s.service) as services, e
+  OPTIONAL MATCH (e)-[f2:IN_FRONT_OF]->(s2:SERVICE) 
+  WITH pls, services, e , count(distinct s2) as allService
+  WITH pls, services, e , (allService - pls) as good
   return pls, e.device, e.component, services, good`
 )
 function paginateData(data, pageNumber, itemsPerPage) {
@@ -340,9 +403,6 @@ const handleServiceFilterChange = (event, {value}) => {
 
 const handlePageChange = (event, value) => {
 
-  
-  console.log("yemememeesisisisissisisisisisis")
-  console.log(value)
   setCurrentPage(value)
 
 
@@ -380,6 +440,44 @@ const getNumPages = () =>{
   }
 }
 
+
+const onFromDate = (event, data) =>{ 
+  
+  const date = new Date(Date.parse(data.value));
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1; 
+  const day = date.getDate();
+
+  setYearFrom(year)
+  setMonthFrom(month)
+  setDayFrom(day)
+
+  setFromDate(data.value)
+
+};
+const onToDate = (event, data) => {
+  
+  const date = new Date(Date.parse(data.value));
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1; 
+  const day = date.getDate();
+
+
+  setYearTo(year);
+  setMonthTo(month);
+  setDayTo(day)
+  setToDate(data.value)
+};
+
+const onFromHour = (event, data) => setFromHour(data.value);
+const onFromMinute = (event, data) => setFromMinutes(data.value);
+
+const onToHour = (event, data) => setToHour(data.value);
+const onToMinute = (event, data) => setToMinutes(data.value);
+
+
+
+
 var result = <div></div>
 
 
@@ -416,6 +514,44 @@ var result = <div></div>
   
 
 
+  const hours = [
+    { key: '0', value: '0', text: '0' },
+    { key: '1', value: '1', text: '1' },
+    { key: '2', value: '2', text: '2' },
+    { key: '3', value: '3', text: '3' },
+    { key: '4', value: '4', text: '4' },
+    { key: '5', value: '5', text: '5' },
+    { key: '6', value: '6', text: '6' },
+    { key: '7', value: '7', text: '7' },
+    { key: '8', value: '8', text: '8' },
+    { key: '9', value: '9', text: '9' },
+    { key: '10', value: '10', text: '10' },
+    { key: '11', value: '11', text: '11' },
+    { key: '12', value: '12', text: '12' },
+    { key: '13', value: '13', text: '13' },
+    { key: '14', value: '14', text: '14' },
+    { key: '15', value: '15', text: '15' },
+    { key: '16', value: '16', text: '16' },
+    { key: '17', value: '17', text: '17' },
+    { key: '18', value: '18', text: '18' },
+    { key: '19', value: '19', text: '19' },
+    { key: '20', value: '20', text: '20' },
+    { key: '21', value: '21', text: '21' },
+    { key: '22', value: '22', text: '22' },
+    { key: '23', value: '23', text: '23' }
+  ]
+
+
+const minutes = [];
+
+for (let i = 0; i <= 59; i++) {
+  const minute = {
+    key: i.toString(),
+    value: i.toString(),
+    text: i.toString(),
+  };
+  minutes.push(minute);
+}
 
 
 
@@ -517,6 +653,88 @@ return (
 
 
       </Container>
+
+      <Menu.Menu position='right'>
+      {/* <Menu.Item
+            name='From'
+          >
+            From
+          </Menu.Item> */}
+
+
+
+          <Menu.Item>
+          <SemanticDatepicker   value={fromDate} inverted locale='fr-FR' onChange={onFromDate}  />
+          </Menu.Item>
+
+          
+         <Dropdown 
+          placeholder='Hour'   
+          selection 
+          item
+          compact
+          options={hours}
+          onChange={onFromHour}
+          value={fromHour}
+           />
+          
+          
+
+        
+         <Dropdown 
+          placeholder='minutes'   
+          selection 
+          item
+          compact
+          options={minutes}
+          onChange={onFromMinute}
+          value={fromMinutes}
+           />
+       
+
+
+
+
+          <Menu.Item
+            name='-'
+          >
+            -
+          </Menu.Item>
+
+          <Menu.Item>
+          <SemanticDatepicker  value={toDate} inverted locale='fr-FR' onChange={onToDate}  />
+          </Menu.Item>
+
+      
+         <Dropdown 
+          placeholder='Hour'   
+         
+          item
+          compact
+          options={hours}
+          onChange={onToHour}
+          value={toHour}
+          defaultValue={toHour}
+           />
+       
+          
+
+          
+         <Dropdown 
+          placeholder='minutes'   
+           
+          item
+          compact
+          options={minutes}
+          onChange={onToMinute}
+          value={toMinutes}
+          defaultValue={toMinutes}
+           />
+          
+
+
+
+        </Menu.Menu>
     
     </Menu>
 
